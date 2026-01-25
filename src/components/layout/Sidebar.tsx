@@ -15,7 +15,8 @@ import {
     ChevronLeft,
     Search,
     Bell,
-    User
+    User,
+    Globe
 } from "lucide-react"
 
 import {
@@ -30,18 +31,21 @@ import {
     SidebarTrigger,
     SidebarInset,
 } from "@/components/ui/sidebar"
-
-const menuItems = [
-    { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { title: "Inventory", icon: Package, href: "/inventory" },
-    { title: "Projects", icon: Briefcase, href: "/projects" },
-    { title: "Finance", icon: Wallet, href: "/finance" },
-    { title: "Documents", icon: Files, href: "/documents" },
-    { title: "Email", icon: Mail, href: "/email" },
-]
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { Button } from "@/components/ui/button"
 
 export function AppSidebar() {
     const pathname = usePathname()
+    const { dict, locale, setLocale } = useLanguage()
+
+    const menuItems = [
+        { title: dict.sidebar.dashboard, icon: LayoutDashboard, href: "/dashboard" },
+        { title: dict.sidebar.inventory, icon: Package, href: "/inventory" },
+        { title: dict.sidebar.projects, icon: Briefcase, href: "/projects" },
+        { title: dict.sidebar.finance, icon: Wallet, href: "/finance" },
+        { title: dict.sidebar.documents, icon: Files, href: "/documents" },
+        { title: dict.sidebar.email, icon: Mail, href: "/email" },
+    ]
 
     return (
         <Sidebar variant="inset">
@@ -76,9 +80,9 @@ export function AppSidebar() {
             <SidebarFooter className="p-4 border-t border-sidebar-border">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton className="py-6">
+                        <SidebarMenuButton className="py-6 h-auto">
                             <User className="size-5" />
-                            <div className="flex flex-col items-start leading-none ml-2">
+                            <div className="flex flex-col items-start leading-none ms-2">
                                 <span className="font-medium italic">Orbit Admin</span>
                                 <span className="text-[10px] text-muted-foreground">admin@orbit.erp</span>
                             </div>
@@ -91,23 +95,36 @@ export function AppSidebar() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+    const { dict, locale, setLocale, isRTL } = useLanguage()
+
     return (
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-4 border-b">
                     <div className="flex items-center gap-2">
-                        <SidebarTrigger className="-ml-1" />
+                        <SidebarTrigger className="-ms-1" />
                         <div className="h-4 w-px bg-muted mx-2" />
                         <h1 className="text-sm font-medium">Workspace / Orbit Foundation</h1>
                     </div>
                     <div className="flex items-center gap-4">
+                        {/* Language Switcher */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setLocale(locale === "en" ? "ar" : "en")}
+                            className="text-xs font-semibold flex items-center gap-2"
+                        >
+                            <Globe className="size-4" />
+                            {locale === "en" ? "العربية" : "English"}
+                        </Button>
+
                         <div className="relative hidden md:block">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input
                                 type="search"
                                 placeholder="Search anything..."
-                                className="pl-9 h-10 w-64 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="ps-9 h-10 w-64 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </div>
                         <button className="relative p-2 rounded-full hover:bg-muted transition-colors">

@@ -15,11 +15,16 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/server"
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
 
 export const runtime = 'edge';
 
 export default async function DashboardPage() {
     const supabase = await createClient()
+    const cookieStore = await cookies()
+    const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "en"
+    const dict = getDictionary(locale)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -43,7 +48,7 @@ export default async function DashboardPage() {
 
     const stats = [
         {
-            title: "Total Inventory Value",
+            title: dict.dashboard.inventoryValue,
             value: `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             description: "Live calculated from master",
             icon: Package,
@@ -51,7 +56,7 @@ export default async function DashboardPage() {
             color: "text-blue-600",
         },
         {
-            title: "Active Projects",
+            title: dict.dashboard.activeProjects,
             value: (projectsCount || 0).toString(),
             description: "Ongoing contracting jobs",
             icon: Briefcase,
@@ -59,7 +64,7 @@ export default async function DashboardPage() {
             color: "text-purple-600",
         },
         {
-            title: "Total Items",
+            title: dict.dashboard.totalItems,
             value: (itemsCount || 0).toString(),
             description: "Unique SKUs in stock",
             icon: TrendingUp,
@@ -67,7 +72,7 @@ export default async function DashboardPage() {
             color: "text-emerald-600",
         },
         {
-            title: "Stock Alerts",
+            title: dict.dashboard.stockAlerts,
             value: "0", // Hardcoded placeholder for now or fetch items with stock < min
             description: "Items below threshold",
             icon: AlertCircle,
@@ -79,9 +84,9 @@ export default async function DashboardPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-2">
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
+                <h2 className="text-3xl font-bold tracking-tight">{dict.dashboard.title}</h2>
                 <p className="text-muted-foreground">
-                    Welcome back, {user.email}. Here's what's happening across your business today.
+                    {dict.dashboard.welcome}, {user?.email}. {dict.dashboard.latestUpdates}
                 </p>
             </div>
 
