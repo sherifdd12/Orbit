@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     // Fetch real counts/data from Supabase
     const [{ count: itemsCount }, { count: projectsCount }, { data: recentProjects }] = await Promise.all([
         supabase.from('items').select('*', { count: 'exact', head: true }),
-        supabase.from('projects').select('*', { count: 'exact', head: true, status: 'Active' }),
+        supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'Active'),
         supabase.from('projects').select('*').order('created_at', { ascending: false }).limit(3)
     ])
 
