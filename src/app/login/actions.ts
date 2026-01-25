@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
 export async function login(formData: FormData) {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // type-casting here for convenience
     // in practice, you should use a library like zeds to validate the data
@@ -25,7 +25,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // type-casting here for convenience
     // in practice, you should use a library like zeds to validate the data

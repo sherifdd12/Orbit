@@ -5,11 +5,10 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard } from 'lucide-react'
 
-export default function LoginPage({
-    searchParams,
-}: {
-    searchParams: { error: string }
+export default async function LoginPage(props: {
+    searchParams: Promise<{ error: string }>
 }) {
+    const searchParams = await props.searchParams;
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
             <Card className="w-full max-w-md shadow-lg border-none">
