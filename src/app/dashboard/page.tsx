@@ -13,37 +13,61 @@ import {
     ArrowUpRight,
     ArrowDownRight
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/server"
+import { redirect } from "next/navigation"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        redirect('/login')
+    }
+
+    // Fetch real counts/data from Supabase
+    const [{ count: itemsCount }, { count: projectsCount }, { data: recentProjects }] = await Promise.all([
+        supabase.from('items').select('*', { count: 'exact', head: true }),
+        supabase.from('projects').select('*', { count: 'exact', head: true, status: 'Active' }),
+        supabase.from('projects').select('*').order('created_at', { ascending: false }).limit(3)
+    ])
+
+    // Simple inventory value calculation placeholder (Sum of stock * price)
+    const { data: inventoryValueData } = await supabase
+        .from('items')
+        .select('stock_quantity, purchase_price')
+
+    const totalValue = (inventoryValueData as any[])?.reduce((acc: number, item: any) =>
+        acc + (Number(item.stock_quantity) * Number(item.purchase_price)), 0) || 0
+
     const stats = [
         {
             title: "Total Inventory Value",
-            value: "$124,500.00",
-            description: "+12.5% from last month",
+            value: `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            description: "Live calculated from master",
             icon: Package,
             trend: "up",
             color: "text-blue-600",
         },
         {
             title: "Active Projects",
-            value: "12",
-            description: "3 nearing deadline",
+            value: (projectsCount || 0).toString(),
+            description: "Ongoing contracting jobs",
             icon: Briefcase,
             trend: "up",
             color: "text-purple-600",
         },
         {
-            title: "Monthly Revenue",
-            value: "$45,230.50",
-            description: "+8.2% from last month",
+            title: "Total Items",
+            value: (itemsCount || 0).toString(),
+            description: "Unique SKUs in stock",
             icon: TrendingUp,
             trend: "up",
             color: "text-emerald-600",
         },
         {
-            title: "Pending Tasks",
-            value: "28",
-            description: "5 high priority",
+            title: "Stock Alerts",
+            value: "0", // Hardcoded placeholder for now or fetch items with stock < min
+            description: "Items below threshold",
             icon: AlertCircle,
             trend: "down",
             color: "text-orange-600",
@@ -55,7 +79,7 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-2">
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
                 <p className="text-muted-foreground">
-                    Welcome back to Orbit. Here's what's happening across your business today.
+                    Welcome back, {user.email}. Here's what's happening across your business today.
                 </p>
             </div>
 
@@ -91,26 +115,28 @@ export default function DashboardPage() {
                     <CardHeader>
                         <CardTitle>Recent Project Activity</CardTitle>
                         <CardDescription>
-                            Updates from your active contracting and service projects.
+                            Latest updates from your projects database.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-8">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center">
+                            {recentProjects?.map((project: any) => (
+                                <div key={project.id} className="flex items-center">
                                     <div className="ml-4 space-y-1">
                                         <p className="text-sm font-medium leading-none">
-                                            Modern Office Renovation - Stage 2
+                                            {project.title}
                                         </p>
                                         <p className="text-sm text-muted-foreground">
-                                            Material delivery confirmed by Warehouse A
+                                            Client: {project.client_name || 'N/A'} - Status: {project.status}
                                         </p>
                                     </div>
                                     <div className="ml-auto font-medium text-sm text-muted-foreground">
-                                        Just now
+                                        {new Date(project.created_at).toLocaleDateString()}
                                     </div>
                                 </div>
-                            ))}
+                            )) || (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No recent projects found.</p>
+                                )}
                         </div>
                     </CardContent>
                 </Card>
@@ -118,26 +144,13 @@ export default function DashboardPage() {
                     <CardHeader>
                         <CardTitle>Stock Alerts</CardTitle>
                         <CardDescription>
-                            Items reaching low stock levels.
+                            Low stock monitoring system.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            {[
-                                { name: "Steel Rebar 12mm", stock: "450kg", min: "500kg" },
-                                { name: "Cement Portland", stock: "20 bags", min: "50 bags" },
-                                { name: "Copper Wiring 2.5mm", stock: "15 rolls", min: "25 rolls" },
-                            ].map((item) => (
-                                <div key={item.name} className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium leading-none">{item.name}</p>
-                                        <p className="text-xs text-rose-500">Stock: {item.stock} / Min: {item.min}</p>
-                                    </div>
-                                    <button className="text-xs font-semibold text-primary hover:underline">
-                                        Reorder
-                                    </button>
-                                </div>
-                            ))}
+                        <div className="space-y-4 text-center py-8">
+                            <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-20" />
+                            <p className="text-sm text-muted-foreground">All items above threshold settings.</p>
                         </div>
                     </CardContent>
                 </Card>

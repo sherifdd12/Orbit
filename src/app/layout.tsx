@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { AppLayout } from "@/components/layout/Sidebar";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppLayout } from "@/components/layout/Sidebar";
+
+export const runtime = 'edge';
 
 const inter = Inter({ subsets: ["latin"] });
 
