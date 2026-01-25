@@ -64,6 +64,8 @@ const recentTransactions = [
     },
 ]
 
+export const runtime = 'edge';
+
 export default function FinancePage() {
     return (
         <div className="space-y-6">

@@ -63,6 +63,8 @@ const files = [
     },
 ]
 
+export const runtime = 'edge';
+
 export default function DocumentsPage() {
     return (
         <div className="space-y-6 h-full flex flex-col">

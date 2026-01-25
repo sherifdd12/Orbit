@@ -80,6 +80,8 @@ const mockItems = [
     },
 ]
 
+export const runtime = 'edge';
+
 export default function InventoryPage() {
     return (
         <div className="space-y-6">
@@ -161,8 +163,8 @@ export default function InventoryPage() {
                                         <TableCell className="text-right font-mono">${item.price.toFixed(2)}</TableCell>
                                         <TableCell>
                                             <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${item.status === 'In Stock' ? 'bg-emerald-100 text-emerald-700' :
-                                                    item.status === 'Low Stock' ? 'bg-orange-100 text-orange-700' :
-                                                        'bg-rose-100 text-rose-700'
+                                                item.status === 'Low Stock' ? 'bg-orange-100 text-orange-700' :
+                                                    'bg-rose-100 text-rose-700'
                                                 }`}>
                                                 {item.status}
                                             </span>

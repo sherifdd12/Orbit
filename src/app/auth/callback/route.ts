@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 // The client you created in Step 2
 import { createClient } from '@/utils/supabase/server'
 
+export const runtime = 'edge';
+
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')

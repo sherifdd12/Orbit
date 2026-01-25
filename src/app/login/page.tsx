@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { LayoutDashboard } from 'lucide-react'
 
+export const runtime = 'edge';
+
 export default async function LoginPage(props: {
     searchParams: Promise<{ error: string }>
 }) {

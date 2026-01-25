@@ -61,6 +61,8 @@ const emails = [
     },
 ]
 
+export const runtime = 'edge';
+
 export default function EmailPage() {
     return (
         <div className="flex h-[calc(100vh-140px)] gap-4 overflow-hidden">
