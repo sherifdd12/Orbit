@@ -3,8 +3,6 @@ import { AppLayout } from "@/components/layout/Sidebar";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-export const runtime = 'edge';
-
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
