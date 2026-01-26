@@ -127,7 +127,7 @@ export default async function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-8">
-                            {recentProjects?.map((project) => (
+                            {(recentProjects as { id: string; title: string; client_name?: string; status: string; created_at: string }[] | null)?.map((project) => (
                                 <div key={project.id} className="flex items-center">
                                     <div className="ml-4 space-y-1">
                                         <p className="text-sm font-medium leading-none">
