@@ -167,11 +167,12 @@ export default async function DashboardPage() {
                 </div>
             </div>
         )
-    } catch (error: any) {
-        if (error?.digest?.includes('NEXT_REDIRECT')) {
+    } catch (error: unknown) {
+        if (error instanceof Error && (error as { digest?: string })?.digest?.includes('NEXT_REDIRECT')) {
             throw error;
         }
         console.error("Dashboard Render Error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return (
             <div className="p-8 text-center bg-white rounded-lg shadow-sm">
                 <h2 className="text-xl font-bold text-rose-600">Failed to load Dashboard</h2>
@@ -179,7 +180,7 @@ export default async function DashboardPage() {
                     This might be due to missing database tables or environment variables.
                 </p>
                 <div className="mt-4 p-4 bg-slate-50 rounded text-left text-xs font-mono overflow-auto max-w-lg mx-auto">
-                    {error?.message || "Unknown error"}
+                    {errorMessage}
                 </div>
             </div>
         )
