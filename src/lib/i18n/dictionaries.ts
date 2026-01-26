@@ -60,6 +60,7 @@ export const dictionaries = {
 export type Locale = "en" | "ar"
 export type Dictionary = typeof dictionaries.en
 
-export function getDictionary(locale: Locale): Dictionary {
-    return dictionaries[locale] || dictionaries.en
+export function getDictionary(locale: string): Dictionary {
+    if (locale === "ar") return dictionaries.ar;
+    return dictionaries.en;
 }

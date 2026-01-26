@@ -29,7 +29,7 @@ export function LanguageProvider({
         window.location.reload()
     }
 
-    const dict = dictionaries[locale]
+    const dict = dictionaries[locale] || dictionaries.en
     const isRTL = locale === "ar"
 
     useEffect(() => {

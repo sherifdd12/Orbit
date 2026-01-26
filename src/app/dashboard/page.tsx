@@ -23,7 +23,8 @@ export const runtime = 'edge';
 export default async function DashboardPage() {
     const supabase = await createClient()
     const cookieStore = await cookies()
-    const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "en"
+    const rawLocale = cookieStore.get("NEXT_LOCALE")?.value || "en"
+    const locale: Locale = rawLocale === "ar" ? "ar" : "en"
     const dict = getDictionary(locale)
 
     const { data: { user } } = await supabase.auth.getUser()
