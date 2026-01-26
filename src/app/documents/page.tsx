@@ -4,13 +4,10 @@ import * as React from "react"
 import {
     Files,
     Folder,
-    Search,
     Plus,
-    MoreVertical,
+    Search,
     Download,
     Share2,
-    Trash2,
-    ExternalLink,
     Cloud
 } from "lucide-react"
 
@@ -21,7 +18,6 @@ import {
     CardContent,
     CardHeader,
     CardTitle,
-    CardDescription,
 } from "@/components/ui/card"
 import {
     Table,

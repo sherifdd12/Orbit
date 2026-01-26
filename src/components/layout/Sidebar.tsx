@@ -10,9 +10,6 @@ import {
     Wallet,
     Mail,
     Files,
-    Settings,
-    Menu,
-    ChevronLeft,
     Search,
     Bell,
     User,
@@ -36,7 +33,7 @@ import { Button } from "@/components/ui/button"
 
 export function AppSidebar() {
     const pathname = usePathname()
-    const { dict, locale, setLocale } = useLanguage()
+    const { dict } = useLanguage()
 
     const menuItems = [
         { title: dict.sidebar.dashboard, icon: LayoutDashboard, href: "/dashboard" },
@@ -95,7 +92,7 @@ export function AppSidebar() {
 }
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-    const { dict, locale, setLocale, isRTL } = useLanguage()
+    const { locale, setLocale } = useLanguage()
 
     return (
         <SidebarProvider>

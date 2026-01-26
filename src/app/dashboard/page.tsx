@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         .from('items')
         .select('stock_quantity, purchase_price')
 
-    const totalValue = (inventoryValueData as any[])?.reduce((acc: number, item: any) =>
+    const totalValue = (inventoryValueData as { stock_quantity: number; purchase_price: number }[] | null)?.reduce((acc: number, item) =>
         acc + (Number(item.stock_quantity) * Number(item.purchase_price)), 0) || 0
 
     const stats = [
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-8">
-                            {recentProjects?.map((project: any) => (
+                            {recentProjects?.map((project) => (
                                 <div key={project.id} className="flex items-center">
                                     <div className="ml-4 space-y-1">
                                         <p className="text-sm font-medium leading-none">
