@@ -9,8 +9,10 @@ import {
     TrendingDown,
     TrendingUp,
     Receipt,
-    ArrowRight
+    ArrowRight,
+    Loader2
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -28,45 +30,87 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-
-const recentTransactions = [
-    {
-        id: "TX-101",
-        date: "2024-01-24",
-        description: "Material Purchase - Modern Office",
-        category: "Materials",
-        amount: -2450.00,
-        status: "Cleared",
-    },
-    {
-        id: "TX-102",
-        date: "2024-01-23",
-        description: "Client Payment - TechCorp",
-        category: "Income",
-        amount: 12500.00,
-        status: "Processing",
-    },
-    {
-        id: "TX-103",
-        date: "2024-01-22",
-        description: "Monthly Rent - Office A",
-        category: "Rent",
-        amount: -1200.00,
-        status: "Cleared",
-    },
-    {
-        id: "TX-104",
-        date: "2024-01-21",
-        description: "Service Fee - HVAC Mall",
-        category: "Service",
-        amount: 850.00,
-        status: "Cleared",
-    },
-]
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export const runtime = 'edge';
 
+interface Transaction {
+    id: string
+    date: string
+    description: string
+    category: string
+    amount: number
+    type: 'Income' | 'Expense'
+}
+
 export default function FinancePage() {
+    const [transactions, setTransactions] = React.useState<Transaction[]>([])
+    const [loading, setLoading] = React.useState(true)
+    const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const [newTx, setNewTx] = React.useState({
+        description: '',
+        amount: 0,
+        type: 'Expense' as 'Income' | 'Expense',
+        category: '',
+        date: new Date().toISOString().split('T')[0]
+    })
+
+    const supabase = createClient()
+
+    const fetchTransactions = React.useCallback(async () => {
+        setLoading(true)
+        const { data, error } = await supabase
+            .from('finance_records')
+            .select('*')
+            .order('date', { ascending: false })
+
+        if (error) {
+            console.error('Error fetching transactions:', error)
+        } else {
+            setTransactions(data || [])
+        }
+        setLoading(false)
+    }, [supabase])
+
+    React.useEffect(() => {
+        fetchTransactions()
+    }, [fetchTransactions])
+
+    const handleAddTransaction = async () => {
+        if (!newTx.description || !newTx.amount) return alert("Description and Amount are required")
+
+        const { error } = await supabase.from('finance_records').insert([newTx])
+
+        if (error) {
+            alert("Error adding transaction: " + error.message)
+        } else {
+            setIsAddOpen(false)
+            setNewTx({
+                description: '',
+                amount: 0,
+                type: 'Expense',
+                category: '',
+                date: new Date().toISOString().split('T')[0]
+            })
+            fetchTransactions()
+        }
+    }
+
+    // Totals
+    const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + Number(t.amount), 0)
+    const totalExpenses = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + Number(t.amount), 0)
+    const balance = totalIncome - totalExpenses
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -81,139 +125,148 @@ export default function FinancePage() {
                         <Download className="mr-2 h-4 w-4" />
                         Report
                     </Button>
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Transaction
-                    </Button>
+
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" />
+                                New Transaction
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>New Transaction</DialogTitle>
+                                <DialogDescription>Record a new income or expense entry.</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Description</Label>
+                                    <Input
+                                        value={newTx.description}
+                                        onChange={e => setNewTx({ ...newTx, description: e.target.value })}
+                                        placeholder="e.g. Office Supplies"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Amount</Label>
+                                        <Input
+                                            type="number"
+                                            value={newTx.amount}
+                                            onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Type</Label>
+                                        <select
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                            value={newTx.type}
+                                            onChange={e => setNewTx({ ...newTx, type: e.target.value as 'Income' | 'Expense' })}
+                                        >
+                                            <option value="Expense">Expense</option>
+                                            <option value="Income">Income</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Input
+                                        value={newTx.category}
+                                        onChange={e => setNewTx({ ...newTx, category: e.target.value })}
+                                        placeholder="e.g. Rent, Materials, Sales"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date</Label>
+                                    <Input
+                                        type="date"
+                                        value={newTx.date}
+                                        onChange={e => setNewTx({ ...newTx, date: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleAddTransaction}>Save Transaction</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-slate-950 text-slate-50 border-none shadow-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+                        <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
                         <DollarSign className="h-4 w-4 text-emerald-400" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">$124,560.20</div>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3 text-emerald-400" />
-                            +12% from last month
-                        </p>
+                        <div className="text-3xl font-bold">${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$45,200.00</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            24 invoices paid
-                        </p>
+                        <div className="text-2xl font-bold text-emerald-600">${totalIncome.toLocaleString()}</div>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
                         <TrendingDown className="h-4 w-4 text-rose-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$12,840.50</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            18 bills cleared
-                        </p>
+                        <div className="text-2xl font-bold text-rose-600">${totalExpenses.toLocaleString()}</div>
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-7 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Recent Transactions</CardTitle>
-                            <CardDescription>Latest financial activity across all projects.</CardDescription>
+            <Card className="shadow-sm">
+                <CardHeader>
+                    <CardTitle>Recent Transactions</CardTitle>
+                    <CardDescription>Latest financial activity across your business.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="flex justify-center p-8">
+                            <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                            View All
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
+                    ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Description</TableHead>
+                                    <TableHead>Category</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
-                                    <TableHead>Status</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {recentTransactions.map((tx) => (
+                                {transactions.map((tx) => (
                                     <TableRow key={tx.id}>
                                         <TableCell className="text-sm text-muted-foreground">{tx.date}</TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">{tx.description}</div>
-                                            <div className="text-xs text-muted-foreground">{tx.category}</div>
-                                        </TableCell>
-                                        <TableCell className={`text-right font-mono font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {tx.amount > 0 ? '+' : ''}{tx.amount.toFixed(2)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${tx.status === 'Cleared' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'
-                                                }`}>
-                                                {tx.status}
-                                            </span>
+                                        <TableCell className="font-medium">{tx.description}</TableCell>
+                                        <TableCell>{tx.category}</TableCell>
+                                        <TableCell className={`text-right font-mono font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {tx.type === 'Income' ? '+' : '-'}${Number(tx.amount).toFixed(2)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                {transactions.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                            No transactions recorded yet.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3 shadow-sm flex flex-col">
-                    <CardHeader>
-                        <CardTitle>Quick Actions</CardTitle>
-                        <CardDescription>Common accounting tasks.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 flex-1">
-                        <Button variant="outline" className="w-full justify-start py-6 text-sm group" asChild>
-                            <a href="#">
-                                <Receipt className="mr-3 h-5 w-5 text-blue-500 group-hover:scale-110 transition-transform" />
-                                <div className="text-left">
-                                    <div className="font-semibold">Create New Invoice</div>
-                                    <div className="text-xs text-muted-foreground">Bill a client for services or stock</div>
-                                </div>
-                                <ArrowRight className="ml-auto h-4 w-4 opacity-50" />
-                            </a>
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start py-6 text-sm group" asChild>
-                            <a href="#">
-                                <CreditCard className="mr-3 h-5 w-5 text-purple-500 group-hover:scale-110 transition-transform" />
-                                <div className="text-left">
-                                    <div className="font-semibold">Record Expense</div>
-                                    <div className="text-xs text-muted-foreground">Log a business cost or material buy</div>
-                                </div>
-                                <ArrowRight className="ml-auto h-4 w-4 opacity-50" />
-                            </a>
-                        </Button>
-                        <div className="mt-6 p-4 rounded-xl bg-orange-50 border border-orange-100">
-                            <h4 className="text-sm font-bold text-orange-800 flex items-center gap-2">
-                                <Receipt className="h-4 w-4" />
-                                Pending Invoices
-                            </h4>
-                            <p className="text-xs text-orange-700 mt-1">
-                                You have 3 invoices overdue from last week totaling <strong>$4,200</strong>.
-                            </p>
-                            <Button size="sm" className="mt-3 bg-orange-600 hover:bg-orange-700 text-xs h-8">
-                                Remind Clients
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     )
 }
+

@@ -13,7 +13,8 @@ import {
     Search,
     Bell,
     User,
-    Globe
+    Globe,
+    CheckSquare
 } from "lucide-react"
 
 import {
@@ -39,6 +40,7 @@ export function AppSidebar() {
         { title: dict.sidebar.dashboard, icon: LayoutDashboard, href: "/dashboard" },
         { title: dict.sidebar.inventory, icon: Package, href: "/inventory" },
         { title: dict.sidebar.projects, icon: Briefcase, href: "/projects" },
+        { title: "Tasks", icon: CheckSquare, href: "/tasks" },
         { title: dict.sidebar.finance, icon: Wallet, href: "/finance" },
         { title: dict.sidebar.documents, icon: Files, href: "/documents" },
         { title: dict.sidebar.email, icon: Mail, href: "/email" },

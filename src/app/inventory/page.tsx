@@ -4,9 +4,7 @@ import * as React from "react"
 import {
     Plus,
     Search,
-    Filter,
     MoreHorizontal,
-    ArrowUpDown,
     Download,
     Package,
     Loader2
@@ -18,14 +16,12 @@ import {
     Card,
     CardContent,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -128,6 +124,18 @@ export default function InventoryPage() {
         }
     }
 
+    // Handle Delete Item
+    const handleDeleteItem = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this item?")) return
+
+        const { error } = await supabase.from('items').delete().eq('id', id)
+        if (error) {
+            alert("Failed to delete item: " + error.message)
+        } else {
+            fetchItems()
+        }
+    }
+
     // Derived state for filtering
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,7 +168,7 @@ export default function InventoryPage() {
                             <DialogHeader>
                                 <DialogTitle>Add New Item</DialogTitle>
                                 <DialogDescription>
-                                    Create a new inventory item. Click save when you're done.
+                                    Create a new inventory item. Click save when you&apos;re done.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
@@ -291,6 +299,7 @@ export default function InventoryPage() {
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                         <DropdownMenuItem>View Details</DropdownMenuItem>
                                                         <DropdownMenuItem>Edit Stock</DropdownMenuItem>
+                                                        <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(item.id)}>Delete Item</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </TableCell>

@@ -48,6 +48,11 @@ export default async function DashboardPage() {
     const totalValue = (inventoryValueData as { stock_quantity: number; purchase_price: number }[] | null)?.reduce((acc: number, item) =>
         acc + (Number(item.stock_quantity) * Number(item.purchase_price)), 0) || 0
 
+    const { count: alertsCount } = await supabase
+        .from('items')
+        .select('*', { count: 'exact', head: true })
+        .lt('stock_quantity', 5)
+
     const stats = [
         {
             title: dict.dashboard.inventoryValue,
@@ -75,11 +80,11 @@ export default async function DashboardPage() {
         },
         {
             title: dict.dashboard.stockAlerts,
-            value: "0", // Hardcoded placeholder for now or fetch items with stock < min
-            description: "Items below threshold",
+            value: (alertsCount || 0).toString(),
+            description: "Items below threshold (5)",
             icon: AlertCircle,
             trend: "down",
-            color: "text-orange-600",
+            color: (alertsCount || 0) > 0 ? "text-rose-600" : "text-orange-600",
         },
     ]
 
