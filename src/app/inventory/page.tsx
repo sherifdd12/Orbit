@@ -369,6 +369,33 @@ export default function InventoryPage() {
                     </div>
                 </CardContent>
             </Card>
+            {/* Edit Dialog */}
+            <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Item</DialogTitle>
+                    </DialogHeader>
+                    {editingItem && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Name</Label>
+                                <Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Stock</Label>
+                                <Input type="number" value={editingItem.stock_quantity} onChange={e => setEditingItem({ ...editingItem, stock_quantity: Number(e.target.value) })} className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Avg. Cost</Label>
+                                <Input type="number" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} className="col-span-3" />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button onClick={handleUpdateItem}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

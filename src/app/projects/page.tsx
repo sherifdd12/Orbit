@@ -70,7 +70,7 @@ export default function ProjectsPage() {
 
     const [editingProject, setEditingProject] = React.useState<Project | null>(null)
     const [viewingProject, setViewingProject] = React.useState<Project | null>(null)
-    const [customers, setCustomers] = React.useState<any[]>([])
+    const [customers, setCustomers] = React.useState<{ id: string; name: string }[]>([])
 
     const supabase = createClient()
 
@@ -306,6 +306,68 @@ export default function ProjectsPage() {
                     )}
                 </div>
             )}
+            {/* View Details Dialog */}
+            <Dialog open={!!viewingProject} onOpenChange={() => setViewingProject(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{viewingProject?.title}</DialogTitle>
+                    </DialogHeader>
+                    {viewingProject && (
+                        <div className="grid gap-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Client/Customer</p>
+                                    <p className="font-semibold">{viewingProject.client_name || 'N/A'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Budget</p>
+                                    <p className="font-semibold text-emerald-600">${viewingProject.budget?.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Description</p>
+                                <p className="text-sm">{viewingProject.description || 'No description'}</p>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={!!editingProject} onOpenChange={() => setEditingProject(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Project</DialogTitle>
+                    </DialogHeader>
+                    {editingProject && (
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Title</Label>
+                                <Input value={editingProject.title} onChange={e => setEditingProject({ ...editingProject, title: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Budget</Label>
+                                <Input type="number" value={editingProject.budget} onChange={e => setEditingProject({ ...editingProject, budget: Number(e.target.value) })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <select
+                                    className="w-full border p-2 rounded"
+                                    value={editingProject.status}
+                                    onChange={e => setEditingProject({ ...editingProject, status: e.target.value })}
+                                >
+                                    <option value="Planning">Planning</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button onClick={handleUpdateProject}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -7,7 +7,6 @@ import {
     Plus,
     Search,
     Download,
-    Share2,
     Cloud
 } from "lucide-react"
 
@@ -38,41 +37,19 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-const files = [
-    {
-        name: "Project_Proposal_Office.pdf",
-        type: "PDF",
-        size: "2.4 MB",
-        modified: "2024-01-20",
-        project: "Modern Office",
-    },
-    {
-        name: "Inventory_Stock_Jan.xlsx",
-        type: "Excel",
-        size: "1.1 MB",
-        modified: "2024-01-18",
-        project: "General",
-    },
-    {
-        name: "Site_Photos_Mall.zip",
-        type: "Archive",
-        size: "45 MB",
-        modified: "2024-01-22",
-        project: "Central Mall",
-    },
-    {
-        name: "Contract_Terms_2024.docx",
-        type: "Word",
-        size: "850 KB",
-        modified: "2024-01-15",
-        project: "Legal",
-    },
-]
+interface Document {
+    id: string
+    name: string
+    file_path: string
+    type: string
+    size: number
+    created_at: string
+}
 
 export const runtime = 'edge';
 
 export default function DocumentsPage() {
-    const [docs, setDocs] = React.useState<any[]>([])
+    const [docs, setDocs] = React.useState<Document[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isUploadOpen, setIsUploadOpen] = React.useState(false)
     const [newDoc, setNewDoc] = React.useState({

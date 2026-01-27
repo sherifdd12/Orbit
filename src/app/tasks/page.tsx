@@ -57,8 +57,8 @@ export default function TasksPage() {
         assignee_id: '',
         project_id: ''
     })
-    const [users, setUsers] = React.useState<any[]>([])
-    const [projects, setProjects] = React.useState<any[]>([])
+    const [users, setUsers] = React.useState<{ id: string; full_name?: string; email?: string }[]>([])
+    const [projects, setProjects] = React.useState<{ id: string; title: string }[]>([])
 
     const supabase = createClient()
 
