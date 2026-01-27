@@ -90,6 +90,18 @@ ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.finance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory_logs ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to ensure idempotency
+DROP POLICY IF EXISTS "Public profiles are viewable by authenticated users" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Items are viewable by authenticated users" ON public.items;
+DROP POLICY IF EXISTS "Admin/Manager can manage items" ON public.items;
+DROP POLICY IF EXISTS "Projects viewable by authenticated" ON public.projects;
+DROP POLICY IF EXISTS "Project management" ON public.projects;
+DROP POLICY IF EXISTS "Tasks viewable by authenticated" ON public.tasks;
+DROP POLICY IF EXISTS "Tasks management" ON public.tasks;
+DROP POLICY IF EXISTS "Finance viewable by Admin and Accountant" ON public.finance_records;
+DROP POLICY IF EXISTS "Finance record management" ON public.finance_records;
+
 -- Profiles: Users can read all profiles, but only update their own
 CREATE POLICY "Public profiles are viewable by authenticated users" ON public.profiles
     FOR SELECT USING (auth.role() = 'authenticated');
@@ -130,3 +142,25 @@ CREATE POLICY "Finance record management" ON public.finance_records
     FOR ALL USING (
         EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Admin', 'Accountant'))
     );
+
+
+-- AUTOMATION: HANDLE NEW USER SIGNUP
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data ->> 'full_name',
+    'Employee' -- Default role
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger security
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
