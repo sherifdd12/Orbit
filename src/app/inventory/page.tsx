@@ -12,6 +12,7 @@ import {
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
     Card,
     CardContent,
@@ -43,7 +44,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-// import { toast } from "sonner" 
 
 // Define Item Interface
 interface Item {
@@ -54,7 +54,7 @@ interface Item {
     stock_quantity: number
     uom: string
     avg_cost: number
-    status?: string // Derived in UI
+    status?: string
 }
 
 export const runtime = 'edge';
@@ -73,13 +73,13 @@ export default function InventoryPage() {
     })
 
     const [editingItem, setEditingItem] = React.useState<Item | null>(null)
-
-    // Search state
+    const [viewingItem, setViewingItem] = React.useState<Item | null>(null)
+    const [isCustomCategory, setIsCustomCategory] = React.useState(false)
+    const [customCategory, setCustomCategory] = React.useState("")
     const [searchTerm, setSearchTerm] = React.useState("")
 
     const supabase = createClient()
 
-    // Fetch Items
     const fetchItems = React.useCallback(async () => {
         setLoading(true)
         const { data, error } = await supabase
@@ -87,12 +87,7 @@ export default function InventoryPage() {
             .select('*')
             .order('created_at', { ascending: false })
 
-        if (error) {
-            console.error('Error fetching items:', error)
-            // fallback to empty
-        } else {
-            setItems(data || [])
-        }
+        if (!error) setItems(data || [])
         setLoading(false)
     }, [supabase])
 
@@ -100,71 +95,61 @@ export default function InventoryPage() {
         fetchItems()
     }, [fetchItems])
 
-    // Handle Add Item
     const handleAddItem = async () => {
-        if (!newItem.name || !newItem.sku) {
-            alert("Name and SKU are required")
-            return
-        }
+        if (!newItem.name || !newItem.sku) return alert("Name and SKU are required")
+        const finalCategory = isCustomCategory ? customCategory : newItem.category
+        const { error } = await supabase.from('items').insert([{
+            ...newItem,
+            category: finalCategory
+        }])
 
-        const { error } = await supabase.from('items').insert([
-            {
-                name: newItem.name,
-                sku: newItem.sku,
-                category: newItem.category,
-                stock_quantity: newItem.stock_quantity,
-                uom: newItem.uom,
-                avg_cost: newItem.avg_cost
-            }
-        ])
-
-        if (error) {
-            console.error(error)
-            alert("Failed to create item: " + error.message)
-        } else {
+        if (error) alert("Failed to create item: " + error.message)
+        else {
             setIsAddOpen(false)
             setNewItem({ name: '', sku: '', category: '', stock_quantity: 0, uom: 'pcs', avg_cost: 0 })
-            fetchItems() // Refresh
+            setCustomCategory("")
+            setIsCustomCategory(false)
+            fetchItems()
         }
     }
 
-    // Handle Update Item
     const handleUpdateItem = async () => {
         if (!editingItem) return
+        const { error } = await supabase.from('items').update({
+            name: editingItem.name,
+            sku: editingItem.sku,
+            category: editingItem.category,
+            stock_quantity: editingItem.stock_quantity,
+            uom: editingItem.uom,
+            avg_cost: editingItem.avg_cost
+        }).eq('id', editingItem.id)
 
-        const { error } = await supabase
-            .from('items')
-            .update({
-                name: editingItem.name,
-                sku: editingItem.sku,
-                category: editingItem.category,
-                stock_quantity: editingItem.stock_quantity,
-                uom: editingItem.uom,
-                avg_cost: editingItem.avg_cost
-            })
-            .eq('id', editingItem.id)
-
-        if (error) {
-            alert("Failed to update item: " + error.message)
-        } else {
+        if (error) alert(error.message)
+        else {
             setEditingItem(null)
             fetchItems()
         }
     }
 
-    // Handle Delete Item
     const handleDeleteItem = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this item?")) return
-
+        if (!confirm("Delete this item?")) return
         const { error } = await supabase.from('items').delete().eq('id', id)
-        if (error) {
-            alert("Failed to delete item: " + error.message)
-        } else {
-            fetchItems()
-        }
+        if (error) alert(error.message)
+        else fetchItems()
     }
 
-    // Derived state for filtering
+    const exportToCSV = () => {
+        const headers = ["Name", "SKU", "Category", "Stock", "Unit", "Avg Cost"]
+        const csvRows = items.map(i => [i.name, i.sku, i.category, i.stock_quantity, i.uom, i.avg_cost].join(","))
+        const csvContent = [headers.join(","), ...csvRows].join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.setAttribute("href", url)
+        link.setAttribute("download", "inventory_report.csv")
+        link.click()
+    }
+
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -175,225 +160,104 @@ export default function InventoryPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Inventory Master</h2>
-                    <p className="text-muted-foreground text-sm">
-                        Manage your items, materials, and products across all warehouses.
-                    </p>
+                    <p className="text-muted-foreground text-sm">Manage your products and materials.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export CSV
+                    <Button variant="outline" onClick={exportToCSV}>
+                        <Download className="mr-2 h-4 w-4" /> Export CSV
                     </Button>
-
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add New Item
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>Add New Item</DialogTitle>
-                                <DialogDescription>
-                                    Create a new inventory item. Click save when you&apos;re done.
-                                </DialogDescription>
-                            </DialogHeader>
+                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Item</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Add New Item</DialogTitle></DialogHeader>
                             <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Name</Label><Input value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} className="col-span-3" /></div>
+                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">SKU</Label><Input value={newItem.sku} onChange={e => setNewItem({ ...newItem, sku: e.target.value })} className="col-span-3" /></div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="name" className="text-right">
-                                        Name
-                                    </Label>
-                                    <Input
-                                        id="name"
-                                        value={newItem.name}
-                                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                                        className="col-span-3"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="sku" className="text-right">
-                                        SKU
-                                    </Label>
-                                    <Input
-                                        id="sku"
-                                        value={newItem.sku}
-                                        onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
-                                        className="col-span-3"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="category" className="text-right">
-                                        Category
-                                    </Label>
-                                    <div className="col-span-3 flex gap-2">
-                                        <select
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            value={newItem.category}
-                                            onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                                        >
+                                    <Label className="text-right">Category</Label>
+                                    <div className="col-span-3 flex flex-col gap-2">
+                                        <select className="border rounded p-2 text-sm" value={isCustomCategory ? "NEW" : newItem.category} onChange={e => {
+                                            if (e.target.value === "NEW") setIsCustomCategory(true)
+                                            else { setIsCustomCategory(false); setNewItem({ ...newItem, category: e.target.value }) }
+                                        }}>
                                             <option value="">Select Category</option>
-                                            {[...new Set(items.map(i => i.category))].filter(Boolean).map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
+                                            {[...new Set(items.map(i => i.category))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
                                             <option value="NEW">+ Add New Category</option>
                                         </select>
-                                        {newItem.category === 'NEW' && (
-                                            <Input
-                                                placeholder="Enter Category"
-                                                onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                                            />
-                                        )}
+                                        {isCustomCategory && <Input placeholder="New Category Name" value={customCategory} onChange={e => setCustomCategory(e.target.value)} />}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Stock & Unit</Label>
-                                    <div className="col-span-3 grid grid-cols-2 gap-2">
-                                        <Input
-                                            type="number"
-                                            value={newItem.stock_quantity}
-                                            onChange={(e) => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })}
-                                        />
-                                        <Input
-                                            placeholder="Unit (e.g. pcs, kg)"
-                                            value={newItem.uom}
-                                            onChange={(e) => setNewItem({ ...newItem, uom: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Avg. Cost</Label>
-                                    <Input
-                                        type="number"
-                                        className="col-span-3"
-                                        value={newItem.avg_cost}
-                                        onChange={(e) => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })}
-                                    />
-                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Stock/Unit</Label><div className="col-span-3 flex gap-2"><Input type="number" value={newItem.stock_quantity} onChange={e => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })} /><Input placeholder="Unit" value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} /></div></div>
+                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Avg. Cost</Label><Input type="number" className="col-span-3" value={newItem.avg_cost} onChange={e => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })} /></div>
                             </div>
-                            <DialogFooter>
-                                <Button onClick={handleAddItem}>Save changes</Button>
-                            </DialogFooter>
+                            <DialogFooter><Button onClick={handleAddItem}>Save</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
             </div>
 
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search by name, SKU..."
-                                className="pl-9"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </CardHeader>
+                <CardHeader><div className="relative w-full md:w-96"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Search..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[50px]"></TableHead>
-                                    <TableHead>Item Name</TableHead>
-                                    <TableHead>SKU</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead className="text-right">Stock Level</TableHead>
-                                    <TableHead className="text-right">Unit</TableHead>
-                                    <TableHead className="text-right">Avg. Cost</TableHead>
-                                    <TableHead className="w-[50px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
+                            <TableHeader><TableRow><TableHead></TableHead><TableHead>Name</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Stock</TableHead><TableHead className="text-right">Cost</TableHead><TableHead></TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin inline" />
-                                            Loading inventory...
+                                {loading ? <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow> : filteredItems.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell><Package className="h-4 w-4 text-muted-foreground" /></TableCell>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell className="font-mono text-xs">{item.sku}</TableCell>
+                                        <TableCell><Badge variant="secondary">{item.category}</Badge></TableCell>
+                                        <TableCell className="text-right font-semibold">{item.stock_quantity} {item.uom}</TableCell>
+                                        <TableCell className="text-right font-mono">${(item.avg_cost || 0).toFixed(2)}</TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setEditingItem(item)}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setViewingItem(item)}>View</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(item.id)}>Delete</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
-                                ) : filteredItems.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
-                                            No items found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    filteredItems.map((item) => (
-                                        <TableRow key={item.id} className="hover:bg-slate-50 transition-colors">
-                                            <TableCell>
-                                                <div className="h-8 w-8 rounded-lg bg-primary/5 flex items-center justify-center">
-                                                    <Package className="h-4 w-4 text-primary" />
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell className="text-sm text-muted-foreground font-mono">{item.sku}</TableCell>
-                                            <TableCell>
-                                                <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700">
-                                                    {item.category || 'Uncategorized'}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold">{item.stock_quantity}</TableCell>
-                                            <TableCell className="text-right text-muted-foreground">{item.uom}</TableCell>
-                                            <TableCell className="text-right font-mono">${(item.avg_cost || 0).toFixed(2)}</TableCell>
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => setEditingItem(item)}>Edit Item</DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => alert("Item Details: " + JSON.stringify(item, null, 2))}>View Details</DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(item.id)}>Delete Item</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
+                                ))}
                             </TableBody>
                         </Table>
                     </div>
-                    <div className="flex items-center justify-between mt-4">
-                        <p className="text-sm text-muted-foreground">
-                            Total Items: {items.length}
-                        </p>
-                    </div>
                 </CardContent>
             </Card>
+
             {/* Edit Dialog */}
             <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Item</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle>Edit Item</DialogTitle></DialogHeader>
                     {editingItem && (
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Name</Label>
-                                <Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="col-span-3" />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Stock</Label>
-                                <Input type="number" value={editingItem.stock_quantity} onChange={e => setEditingItem({ ...editingItem, stock_quantity: Number(e.target.value) })} className="col-span-3" />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Avg. Cost</Label>
-                                <Input type="number" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} className="col-span-3" />
+                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Name</Label><Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="col-span-3" /></div>
+                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Stock</Label><Input type="number" value={editingItem.stock_quantity} onChange={e => setEditingItem({ ...editingItem, stock_quantity: Number(e.target.value) })} className="col-span-3" /></div>
+                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Avg. Cost</Label><Input type="number" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} className="col-span-3" /></div>
+                        </div>
+                    )}
+                    <DialogFooter><Button onClick={handleUpdateItem}>Save Changes</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* View Details Dialog */}
+            <Dialog open={!!viewingItem} onOpenChange={() => setViewingItem(null)}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Item Details</DialogTitle></DialogHeader>
+                    {viewingItem && (
+                        <div className="space-y-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><Label className="text-xs text-muted-foreground">Name</Label><p className="font-semibold">{viewingItem.name}</p></div>
+                                <div><Label className="text-xs text-muted-foreground">SKU</Label><p className="font-mono">{viewingItem.sku}</p></div>
+                                <div><Label className="text-xs text-muted-foreground">Category</Label><p>{viewingItem.category || 'N/A'}</p></div>
+                                <div><Label className="text-xs text-muted-foreground">Stock</Label><p className="font-semibold">{viewingItem.stock_quantity} {viewingItem.uom}</p></div>
                             </div>
                         </div>
                     )}
-                    <DialogFooter>
-                        <Button onClick={handleUpdateItem}>Save Changes</Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

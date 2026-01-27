@@ -71,11 +71,7 @@ export default function FinancePage() {
             .select('*')
             .order('date', { ascending: false })
 
-        if (error) {
-            console.error('Error fetching transactions:', error)
-        } else {
-            setTransactions(data || [])
-        }
+        if (!error) setTransactions(data || [])
         setLoading(false)
     }, [supabase])
 
@@ -85,25 +81,27 @@ export default function FinancePage() {
 
     const handleAddTransaction = async () => {
         if (!newTx.description || !newTx.amount) return alert("Description and Amount are required")
-
         const { error } = await supabase.from('finance_records').insert([newTx])
-
-        if (error) {
-            alert("Error adding transaction: " + error.message)
-        } else {
+        if (error) alert(error.message)
+        else {
             setIsAddOpen(false)
-            setNewTx({
-                description: '',
-                amount: 0,
-                type: 'Expense',
-                category: '',
-                date: new Date().toISOString().split('T')[0]
-            })
+            setNewTx({ description: '', amount: 0, type: 'Expense', category: '', date: new Date().toISOString().split('T')[0] })
             fetchTransactions()
         }
     }
 
-    // Totals
+    const exportToCSV = () => {
+        const headers = ["Date", "Description", "Category", "Amount", "Type"]
+        const csvRows = transactions.map(t => [t.date, t.description, t.category, t.amount, t.type].join(","))
+        const csvContent = [headers.join(","), ...csvRows].join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.setAttribute("href", url)
+        link.setAttribute("download", "finance_report.csv")
+        link.click()
+    }
+
     const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + Number(t.amount), 0)
     const totalExpenses = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + Number(t.amount), 0)
     const balance = totalIncome - totalExpenses
@@ -113,78 +111,32 @@ export default function FinancePage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Finance & Accounting</h2>
-                    <p className="text-muted-foreground text-sm">
-                        Monitor cash flow, manage invoices, and track business expenses.
-                    </p>
+                    <p className="text-muted-foreground text-sm">Monitor cash flow and track business expenses.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Report
+                    <Button variant="outline" onClick={exportToCSV}>
+                        <Download className="mr-2 h-4 w-4" /> Export CSV
                     </Button>
-
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="mr-2 h-4 w-4" />
-                                New Transaction
-                            </Button>
-                        </DialogTrigger>
+                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> New Transaction</Button></DialogTrigger>
                         <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>New Transaction</DialogTitle>
-                                <DialogDescription>Record a new income or expense entry.</DialogDescription>
-                            </DialogHeader>
+                            <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
                             <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Input
-                                        value={newTx.description}
-                                        onChange={e => setNewTx({ ...newTx, description: e.target.value })}
-                                        placeholder="e.g. Office Supplies"
-                                    />
-                                </div>
+                                <div className="space-y-2"><Label>Description</Label><Input value={newTx.description} onChange={e => setNewTx({ ...newTx, description: e.target.value })} /></div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Amount</Label>
-                                        <Input
-                                            type="number"
-                                            value={newTx.amount}
-                                            onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })}
-                                        />
-                                    </div>
+                                    <div className="space-y-2"><Label>Amount</Label><Input type="number" value={newTx.amount} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} /></div>
                                     <div className="space-y-2">
                                         <Label>Type</Label>
-                                        <select
-                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                            value={newTx.type}
-                                            onChange={e => setNewTx({ ...newTx, type: e.target.value as 'Income' | 'Expense' })}
-                                        >
+                                        <select className="w-full border rounded p-2" value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value as any })}>
                                             <option value="Expense">Expense</option>
                                             <option value="Income">Income</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Category</Label>
-                                    <Input
-                                        value={newTx.category}
-                                        onChange={e => setNewTx({ ...newTx, category: e.target.value })}
-                                        placeholder="e.g. Rent, Materials, Sales"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Date</Label>
-                                    <Input
-                                        type="date"
-                                        value={newTx.date}
-                                        onChange={e => setNewTx({ ...newTx, date: e.target.value })}
-                                    />
-                                </div>
+                                <div className="space-y-2"><Label>Category</Label><Input value={newTx.category} onChange={e => setNewTx({ ...newTx, category: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>Date</Label><Input type="date" value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })} /></div>
                             </div>
-                            <DialogFooter>
-                                <Button onClick={handleAddTransaction}>Save Transaction</Button>
-                            </DialogFooter>
+                            <DialogFooter><Button onClick={handleAddTransaction}>Save</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -192,78 +144,37 @@ export default function FinancePage() {
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-slate-950 text-slate-50 border-none shadow-xl">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-                        <DollarSign className="h-4 w-4 text-emerald-400" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                    </CardContent>
+                    <CardHeader><CardTitle className="text-sm">Net Balance</CardTitle></CardHeader>
+                    <CardContent><div className="text-3xl font-bold">${balance.toLocaleString()}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">${totalIncome.toLocaleString()}</div>
-                    </CardContent>
+                    <CardHeader><CardTitle className="text-sm">Income</CardTitle></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-emerald-600">${totalIncome.toLocaleString()}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-rose-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-rose-600">${totalExpenses.toLocaleString()}</div>
-                    </CardContent>
+                    <CardHeader><CardTitle className="text-sm">Expenses</CardTitle></CardHeader>
+                    <CardContent><div className="text-2xl font-bold text-rose-600">${totalExpenses.toLocaleString()}</div></CardContent>
                 </Card>
             </div>
 
-            <Card className="shadow-sm">
-                <CardHeader>
-                    <CardTitle>Recent Transactions</CardTitle>
-                    <CardDescription>Latest financial activity across your business.</CardDescription>
-                </CardHeader>
+            <Card>
+                <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>
                 <CardContent>
-                    {loading ? (
-                        <div className="flex justify-center p-8">
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                    <Table>
+                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                            {loading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> : transactions.map(tx => (
+                                <TableRow key={tx.id}>
+                                    <TableCell>{tx.date}</TableCell>
+                                    <TableCell className="font-medium text-slate-900">{tx.description}</TableCell>
+                                    <TableCell>{tx.category}</TableCell>
+                                    <TableCell className={`text-right font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>{tx.type === 'Income' ? '+' : '-'}${tx.amount.toFixed(2)}</TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.map((tx) => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell className="text-sm text-muted-foreground">{tx.date}</TableCell>
-                                        <TableCell className="font-medium">{tx.description}</TableCell>
-                                        <TableCell>{tx.category}</TableCell>
-                                        <TableCell className={`text-right font-mono font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {tx.type === 'Income' ? '+' : '-'}${Number(tx.amount).toFixed(2)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {transactions.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
-                                            No transactions recorded yet.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    )}
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>
     )
 }
-

@@ -84,6 +84,18 @@ export default function DocumentsPage() {
             fetchDocs()
         }
     }
+    const exportToCSV = () => {
+        const headers = ["Name", "Type", "Size (MB)", "Date"]
+        const csvRows = docs.map(d => [d.name, d.type, (d.size / 1024).toFixed(2), new Date(d.created_at).toLocaleDateString()].join(","))
+        const csvContent = [headers.join(","), ...csvRows].join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.setAttribute("href", url)
+        link.setAttribute("download", "documents_report.csv")
+        link.click()
+    }
+
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -95,9 +107,9 @@ export default function DocumentsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Folder className="mr-2 h-4 w-4" />
-                        New Folder
+                    <Button variant="outline" onClick={exportToCSV}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Export CSV
                     </Button>
                     <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                         <DialogTrigger asChild>

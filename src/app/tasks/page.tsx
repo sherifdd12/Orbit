@@ -42,6 +42,7 @@ interface Task {
     title: string
     description: string
     status: string
+    priority: string
     due_date: string
 }
 
@@ -52,11 +53,12 @@ export default function TasksPage() {
     const [newTask, setNewTask] = React.useState({
         title: '',
         description: '',
-        status: 'Todo',
+        status: 'To Do',
         due_date: '',
         assignee_id: '',
         project_id: ''
     })
+    const [viewingTask, setViewingTask] = React.useState<Task | null>(null)
     const [users, setUsers] = React.useState<{ id: string; full_name?: string; email?: string }[]>([])
     const [projects, setProjects] = React.useState<{ id: string; title: string }[]>([])
 
@@ -98,7 +100,7 @@ export default function TasksPage() {
             setNewTask({
                 title: '',
                 description: '',
-                status: 'Todo',
+                status: 'To Do',
                 due_date: '',
                 assignee_id: '',
                 project_id: ''
@@ -108,7 +110,7 @@ export default function TasksPage() {
     }
 
     const toggleStatus = async (task: Task) => {
-        const nextStatus = task.status === 'Completed' ? 'Todo' : 'Completed'
+        const nextStatus = task.status === 'Done' ? 'To Do' : 'Done'
         const { error } = await supabase
             .from('tasks')
             .update({ status: nextStatus })
@@ -214,14 +216,14 @@ export default function TasksPage() {
                         <Card key={task.id} className="hover:shadow-sm transition-shadow">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <button onClick={() => toggleStatus(task)}>
-                                    {task.status === 'Completed' ? (
+                                    {task.status === 'Done' ? (
                                         <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                                     ) : (
                                         <Circle className="h-6 w-6 text-muted-foreground" />
                                     )}
                                 </button>
-                                <div className="flex-1">
-                                    <h3 className={`font-semibold ${task.status === 'Completed' ? 'line-through text-muted-foreground' : ''}`}>
+                                <div className="flex-1 cursor-pointer" onClick={() => setViewingTask(task)}>
+                                    <h3 className={`font-semibold ${task.status === 'Done' ? 'line-through text-muted-foreground' : ''}`}>
                                         {task.title}
                                     </h3>
                                     <p className="text-sm text-muted-foreground">{task.description}</p>
@@ -254,6 +256,22 @@ export default function TasksPage() {
                     )}
                 </div>
             )}
+            {/* View Task Dialog */}
+            <Dialog open={!!viewingTask} onOpenChange={() => setViewingTask(null)}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Task Details</DialogTitle></DialogHeader>
+                    {viewingTask && (
+                        <div className="space-y-4">
+                            <div><Label className="text-xs text-muted-foreground">Title</Label><p className="font-semibold">{viewingTask.title}</p></div>
+                            <div><Label className="text-xs text-muted-foreground">Description</Label><p>{viewingTask.description || 'No description'}</p></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant="outline">{viewingTask.status}</Badge></div>
+                                <div><Label className="text-xs text-muted-foreground">Due Date</Label><p>{viewingTask.due_date || 'N/A'}</p></div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

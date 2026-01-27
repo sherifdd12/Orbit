@@ -14,7 +14,8 @@ import {
     Bell,
     User,
     Globe,
-    CheckSquare
+    CheckSquare,
+    FileText
 } from "lucide-react"
 
 import {
@@ -42,6 +43,8 @@ export function AppSidebar() {
         { title: dict.sidebar.projects, icon: Briefcase, href: "/projects" },
         { title: "Tasks", icon: CheckSquare, href: "/tasks" },
         { title: dict.sidebar.finance, icon: Wallet, href: "/finance" },
+        { title: "Invoices", icon: FileText, href: "/finance/invoices" },
+        { title: "Customers", icon: User, href: "/finance/customers" },
         { title: dict.sidebar.documents, icon: Files, href: "/documents" },
         { title: dict.sidebar.email, icon: Mail, href: "/email" },
     ]
