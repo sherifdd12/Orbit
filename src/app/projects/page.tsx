@@ -6,7 +6,6 @@ import {
     MoreHorizontal,
     Calendar,
     Target,
-    Users,
     Clock,
     ExternalLink,
     Loader2
@@ -23,7 +22,6 @@ import {
     CardFooter,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
     DropdownMenu,
     DropdownMenuContent,

@@ -6,7 +6,6 @@ import {
     CheckCircle2,
     Circle,
     Clock,
-    User,
     MoreHorizontal,
     Loader2
 } from "lucide-react"
@@ -16,16 +15,12 @@ import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {

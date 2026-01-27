@@ -2,14 +2,11 @@
 
 import * as React from "react"
 import {
-    CreditCard,
     DollarSign,
     Download,
     Plus,
     TrendingDown,
     TrendingUp,
-    Receipt,
-    ArrowRight,
     Loader2
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
