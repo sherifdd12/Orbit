@@ -53,29 +53,38 @@ export default function TasksPage() {
         title: '',
         description: '',
         status: 'Todo',
-        due_date: ''
+        due_date: '',
+        assignee_id: '',
+        project_id: ''
     })
+    const [users, setUsers] = React.useState<any[]>([])
+    const [projects, setProjects] = React.useState<any[]>([])
 
     const supabase = createClient()
 
-    const fetchTasks = React.useCallback(async () => {
+    const fetchInitialData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('tasks')
-            .select('*')
-            .order('created_at', { ascending: false })
+        const [tasksRes, usersRes, projectsRes] = await Promise.all([
+            supabase.from('tasks').select('*').order('created_at', { ascending: false }),
+            supabase.from('profiles').select('*').order('full_name'),
+            supabase.from('projects').select('*').order('title')
+        ])
 
-        if (error) {
-            console.error('Error fetching tasks:', error)
-        } else {
-            setTasks(data || [])
-        }
+        if (tasksRes.error) console.error('Error fetching tasks:', tasksRes.error)
+        else setTasks(tasksRes.data || [])
+
+        if (usersRes.error) console.error('Error fetching users:', usersRes.error)
+        else setUsers(usersRes.data || [])
+
+        if (projectsRes.error) console.error('Error fetching projects:', projectsRes.error)
+        else setProjects(projectsRes.data || [])
+
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
-        fetchTasks()
-    }, [fetchTasks])
+        fetchInitialData()
+    }, [fetchInitialData])
 
     const handleAddTask = async () => {
         if (!newTask.title) return alert("Title is required")
@@ -90,9 +99,11 @@ export default function TasksPage() {
                 title: '',
                 description: '',
                 status: 'Todo',
-                due_date: ''
+                due_date: '',
+                assignee_id: '',
+                project_id: ''
             })
-            fetchTasks()
+            fetchInitialData() // Changed from fetchTasks() to fetchInitialData() to refresh all data
         }
     }
 
@@ -104,14 +115,14 @@ export default function TasksPage() {
             .eq('id', task.id)
 
         if (error) alert(error.message)
-        else fetchTasks()
+        else fetchInitialData()
     }
 
     const deleteTask = async (id: string) => {
         if (!confirm("Delete task?")) return
         const { error } = await supabase.from('tasks').delete().eq('id', id)
         if (error) alert(error.message)
-        else fetchTasks()
+        else fetchInitialData()
     }
 
     return (
@@ -150,6 +161,32 @@ export default function TasksPage() {
                                     value={newTask.description}
                                     onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Project</Label>
+                                <select
+                                    className="w-full border p-2 rounded"
+                                    value={newTask.project_id}
+                                    onChange={e => setNewTask({ ...newTask, project_id: e.target.value })}
+                                >
+                                    <option value="">None</option>
+                                    {projects.map(p => (
+                                        <option key={p.id} value={p.id}>{p.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Assign To</Label>
+                                <select
+                                    className="w-full border p-2 rounded"
+                                    value={newTask.assignee_id}
+                                    onChange={e => setNewTask({ ...newTask, assignee_id: e.target.value })}
+                                >
+                                    <option value="">Unassigned</option>
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Due Date</Label>

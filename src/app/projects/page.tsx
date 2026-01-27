@@ -64,29 +64,35 @@ export default function ProjectsPage() {
         description: '',
         status: 'Planning',
         budget: 0,
-        deadline: ''
+        deadline: '',
+        customer_id: ''
     })
+
+    const [editingProject, setEditingProject] = React.useState<Project | null>(null)
+    const [viewingProject, setViewingProject] = React.useState<Project | null>(null)
+    const [customers, setCustomers] = React.useState<any[]>([])
 
     const supabase = createClient()
 
-    const fetchProjects = React.useCallback(async () => {
+    const fetchInitialData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('projects')
-            .select('*')
-            .order('created_at', { ascending: false })
+        const [projectsRes, customersRes] = await Promise.all([
+            supabase.from('projects').select('*').order('created_at', { ascending: false }),
+            supabase.from('customers').select('*').order('name')
+        ])
 
-        if (error) {
-            console.error('Error fetching projects:', error)
-        } else {
-            setProjects(data || [])
-        }
+        if (projectsRes.error) console.error('Error fetching projects:', projectsRes.error)
+        else setProjects(projectsRes.data || [])
+
+        if (customersRes.error) console.error('Error fetching customers:', customersRes.error)
+        else setCustomers(customersRes.data || [])
+
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
-        fetchProjects()
-    }, [fetchProjects])
+        fetchInitialData()
+    }, [fetchInitialData])
 
     const handleCreateProject = async () => {
         if (!newProject.title) return alert("Title is required")
@@ -103,9 +109,24 @@ export default function ProjectsPage() {
                 description: '',
                 status: 'Planning',
                 budget: 0,
-                deadline: ''
+                deadline: '',
+                customer_id: ''
             })
-            fetchProjects()
+            fetchInitialData()
+        }
+    }
+
+    const handleUpdateProject = async () => {
+        if (!editingProject) return
+        const { error } = await supabase
+            .from('projects')
+            .update(editingProject)
+            .eq('id', editingProject.id)
+
+        if (error) alert(error.message)
+        else {
+            setEditingProject(null)
+            fetchInitialData()
         }
     }
 
@@ -113,7 +134,7 @@ export default function ProjectsPage() {
         if (!confirm("Are you sure you want to delete this project?")) return
         const { error } = await supabase.from('projects').delete().eq('id', id)
         if (error) alert("Error deleting project: " + error.message)
-        else fetchProjects()
+        else fetchInitialData()
     }
 
     return (
@@ -147,7 +168,21 @@ export default function ProjectsPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Client Name</Label>
+                                <Label>Select Customer</Label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={newProject.customer_id}
+                                    onChange={e => setNewProject({ ...newProject, customer_id: e.target.value })}
+                                >
+                                    <option value="">Select Customer</option>
+                                    {customers.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                    <option value="NEW">+ Add New Customer (Internal)</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fallback Client Name (Legacy)</Label>
                                 <Input
                                     value={newProject.client_name}
                                     onChange={e => setNewProject({ ...newProject, client_name: e.target.value })}
@@ -226,7 +261,7 @@ export default function ProjectsPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Project Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem>Edit Project</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setEditingProject(project)}>Edit Project</DropdownMenuItem>
                                             <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteProject(project.id)}>Delete Project</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -252,7 +287,12 @@ export default function ProjectsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-slate-50/30 border-t flex justify-end">
-                                <Button variant="link" size="sm" className="text-xs font-semibold gap-1">
+                                <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="text-xs font-semibold gap-1"
+                                    onClick={() => setViewingProject(project)}
+                                >
                                     Full Details
                                     <ExternalLink className="h-3 w-3" />
                                 </Button>

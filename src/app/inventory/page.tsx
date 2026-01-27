@@ -68,8 +68,11 @@ export default function InventoryPage() {
         sku: '',
         category: '',
         stock_quantity: 0,
-        uom: 'pcs'
+        uom: 'pcs',
+        avg_cost: 0
     })
+
+    const [editingItem, setEditingItem] = React.useState<Item | null>(null)
 
     // Search state
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -110,7 +113,8 @@ export default function InventoryPage() {
                 sku: newItem.sku,
                 category: newItem.category,
                 stock_quantity: newItem.stock_quantity,
-                uom: newItem.uom
+                uom: newItem.uom,
+                avg_cost: newItem.avg_cost
             }
         ])
 
@@ -119,8 +123,32 @@ export default function InventoryPage() {
             alert("Failed to create item: " + error.message)
         } else {
             setIsAddOpen(false)
-            setNewItem({ name: '', sku: '', category: '', stock_quantity: 0, uom: 'pcs' })
+            setNewItem({ name: '', sku: '', category: '', stock_quantity: 0, uom: 'pcs', avg_cost: 0 })
             fetchItems() // Refresh
+        }
+    }
+
+    // Handle Update Item
+    const handleUpdateItem = async () => {
+        if (!editingItem) return
+
+        const { error } = await supabase
+            .from('items')
+            .update({
+                name: editingItem.name,
+                sku: editingItem.sku,
+                category: editingItem.category,
+                stock_quantity: editingItem.stock_quantity,
+                uom: editingItem.uom,
+                avg_cost: editingItem.avg_cost
+            })
+            .eq('id', editingItem.id)
+
+        if (error) {
+            alert("Failed to update item: " + error.message)
+        } else {
+            setEditingItem(null)
+            fetchItems()
         }
     }
 
@@ -198,23 +226,48 @@ export default function InventoryPage() {
                                     <Label htmlFor="category" className="text-right">
                                         Category
                                     </Label>
-                                    <Input
-                                        id="category"
-                                        value={newItem.category}
-                                        onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                                        className="col-span-3"
-                                    />
+                                    <div className="col-span-3 flex gap-2">
+                                        <select
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                            value={newItem.category}
+                                            onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                                        >
+                                            <option value="">Select Category</option>
+                                            {[...new Set(items.map(i => i.category))].filter(Boolean).map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                            <option value="NEW">+ Add New Category</option>
+                                        </select>
+                                        {newItem.category === 'NEW' && (
+                                            <Input
+                                                placeholder="Enter Category"
+                                                onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="stock" className="text-right">
-                                        Stock
-                                    </Label>
+                                    <Label className="text-right">Stock & Unit</Label>
+                                    <div className="col-span-3 grid grid-cols-2 gap-2">
+                                        <Input
+                                            type="number"
+                                            value={newItem.stock_quantity}
+                                            onChange={(e) => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })}
+                                        />
+                                        <Input
+                                            placeholder="Unit (e.g. pcs, kg)"
+                                            value={newItem.uom}
+                                            onChange={(e) => setNewItem({ ...newItem, uom: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Avg. Cost</Label>
                                     <Input
-                                        id="stock"
                                         type="number"
-                                        value={newItem.stock_quantity}
-                                        onChange={(e) => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })}
                                         className="col-span-3"
+                                        value={newItem.avg_cost}
+                                        onChange={(e) => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })}
                                     />
                                 </div>
                             </div>
@@ -297,8 +350,8 @@ export default function InventoryPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                        <DropdownMenuItem>Edit Stock</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => setEditingItem(item)}>Edit Item</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => alert("Item Details: " + JSON.stringify(item, null, 2))}>View Details</DropdownMenuItem>
                                                         <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(item.id)}>Delete Item</DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>

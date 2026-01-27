@@ -30,11 +30,23 @@ CREATE TABLE IF NOT EXISTS public.items (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. PROJECTS (Jobs/Projects)
+-- 3. CUSTOMERS (CRM)
+CREATE TABLE IF NOT EXISTS public.customers (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT,
+    address TEXT,
+    tax_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 4. PROJECTS (Jobs/Projects)
 CREATE TABLE IF NOT EXISTS public.projects (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
-    client_name TEXT,
+    client_name TEXT, -- Keeping for fallback/legacy
     description TEXT,
     status TEXT CHECK (status IN ('Planning', 'Active', 'On Hold', 'Completed', 'Cancelled')) DEFAULT 'Planning',
     budget DECIMAL(12,2) DEFAULT 0.00,
@@ -58,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. FINANCE RECORDS (Simplified Accounting)
+-- 6. FINANCE RECORDS (Simplified Accounting)
 CREATE TABLE IF NOT EXISTS public.finance_records (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     type TEXT CHECK (type IN ('Income', 'Expense')) NOT NULL,
@@ -66,8 +78,37 @@ CREATE TABLE IF NOT EXISTS public.finance_records (
     amount DECIMAL(12,2) NOT NULL,
     description TEXT,
     project_id UUID REFERENCES public.projects(id) ON DELETE SET NULL,
+    customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
     date DATE DEFAULT CURRENT_DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 7. DOCUMENTS (File Management)
+CREATE TABLE IF NOT EXISTS public.documents (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    size INTEGER,
+    type TEXT,
+    folder_path TEXT DEFAULT '/',
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    created_by UUID REFERENCES public.profiles(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 8. EMAIL SETTINGS (SMTP/IMAP Config)
+CREATE TABLE IF NOT EXISTS public.email_settings (
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
+    smtp_host TEXT,
+    smtp_port INTEGER,
+    smtp_user TEXT,
+    smtp_pass TEXT, -- Ideally encrypted
+    imap_host TEXT,
+    imap_port INTEGER,
+    imap_user TEXT,
+    imap_pass TEXT,
+    is_active BOOLEAN DEFAULT false,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 6. INVENTORY LOGS (Audit Trail)
@@ -85,10 +126,13 @@ CREATE TABLE IF NOT EXISTS public.inventory_logs (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.finance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inventory_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_settings ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies to ensure idempotency
 DROP POLICY IF EXISTS "Public profiles are viewable by authenticated users" ON public.profiles;
@@ -142,6 +186,16 @@ CREATE POLICY "Finance record management" ON public.finance_records
     FOR ALL USING (
         EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Admin', 'Accountant'))
     );
+
+-- Customers, Documents, Email Settings Policies
+CREATE POLICY "Authenticated users can view customers" ON public.customers FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Admin/Manager can manage customers" ON public.customers FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Admin', 'Manager')));
+
+CREATE POLICY "Users can view relevant documents" ON public.documents FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Users can manage own documents" ON public.documents FOR ALL USING (auth.uid() = created_by OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('Admin', 'Manager')));
+
+CREATE POLICY "Users can manage own email settings" ON public.email_settings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all email settings" ON public.email_settings FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'Admin'));
 
 
 -- AUTOMATION: HANDLE NEW USER SIGNUP

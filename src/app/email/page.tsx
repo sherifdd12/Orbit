@@ -11,8 +11,19 @@ import {
     Search,
     MoreVertical,
     Star,
-    RotateCcw
+    RotateCcw,
+    Settings
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -64,6 +75,34 @@ const emails = [
 export const runtime = 'edge';
 
 export default function EmailPage() {
+    const [isSettingsOpen, setIsSettingsOpen] = React.useState(false)
+    const [emailSettings, setEmailSettings] = React.useState({
+        smtp_host: '',
+        smtp_port: 587,
+        smtp_user: '',
+        smtp_pass: '',
+    })
+
+    const supabase = createClient()
+
+    const handleSaveSettings = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        const { error } = await supabase
+            .from('email_settings')
+            .upsert({
+                user_id: user.id,
+                ...emailSettings,
+                is_active: true
+            })
+
+        if (error) alert(error.message)
+        else {
+            alert("Settings saved successfully")
+            setIsSettingsOpen(false)
+        }
+    }
     return (
         <div className="flex h-[calc(100vh-140px)] gap-4 overflow-hidden">
             {/* Sidebar for Email Categories */}
@@ -108,6 +147,43 @@ export default function EmailPage() {
                         <div className="h-2 w-2 rounded-full bg-orange-500" />
                         Logistics
                     </Button>
+                </div>
+
+                <div className="mt-auto">
+                    <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start gap-3 mt-4">
+                                <Settings className="h-4 w-4" />
+                                Email Settings
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Email Server Settings</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>SMTP Host</Label>
+                                    <Input value={emailSettings.smtp_host} onChange={e => setEmailSettings({ ...emailSettings, smtp_host: e.target.value })} placeholder="smtp.gmail.com" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>SMTP Port</Label>
+                                    <Input type="number" value={emailSettings.smtp_port} onChange={e => setEmailSettings({ ...emailSettings, smtp_port: Number(e.target.value) })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Username</Label>
+                                    <Input value={emailSettings.smtp_user} onChange={e => setEmailSettings({ ...emailSettings, smtp_user: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Password</Label>
+                                    <Input type="password" value={emailSettings.smtp_pass} onChange={e => setEmailSettings({ ...emailSettings, smtp_pass: e.target.value })} />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleSaveSettings}>Save Server Settings</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 

@@ -13,6 +13,16 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { createClient } from "@/utils/supabase/client"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import {
     Card,
     CardContent,
@@ -62,6 +72,41 @@ const files = [
 export const runtime = 'edge';
 
 export default function DocumentsPage() {
+    const [docs, setDocs] = React.useState<any[]>([])
+    const [loading, setLoading] = React.useState(true)
+    const [isUploadOpen, setIsUploadOpen] = React.useState(false)
+    const [newDoc, setNewDoc] = React.useState({
+        name: '',
+        type: 'PDF',
+        project_id: '',
+    })
+
+    const supabase = createClient()
+
+    const fetchDocs = React.useCallback(async () => {
+        setLoading(true)
+        const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false })
+        if (!error) setDocs(data || [])
+        setLoading(false)
+    }, [supabase])
+
+    React.useEffect(() => {
+        fetchDocs()
+    }, [fetchDocs])
+
+    const handleUpload = async () => {
+        const { error } = await supabase.from('documents').insert([{
+            name: newDoc.name,
+            file_path: '/placeholder/' + newDoc.name,
+            type: newDoc.type,
+            size: Math.floor(Math.random() * 5000)
+        }])
+        if (error) alert(error.message)
+        else {
+            setIsUploadOpen(false)
+            fetchDocs()
+        }
+    }
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -77,10 +122,41 @@ export default function DocumentsPage() {
                         <Folder className="mr-2 h-4 w-4" />
                         New Folder
                     </Button>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Upload File
-                    </Button>
+                    <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-blue-600 hover:bg-blue-700">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Upload File
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Upload New File</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>File Name</Label>
+                                    <Input value={newDoc.name} onChange={e => setNewDoc({ ...newDoc, name: e.target.value })} placeholder="document.pdf" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Type</Label>
+                                    <select
+                                        className="w-full border p-2 rounded"
+                                        value={newDoc.type}
+                                        onChange={e => setNewDoc({ ...newDoc, type: e.target.value })}
+                                    >
+                                        <option value="PDF">PDF</option>
+                                        <option value="Excel">Excel</option>
+                                        <option value="Word">Word</option>
+                                        <option value="Image">Image</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleUpload}>Save to Cloud</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
@@ -128,8 +204,12 @@ export default function DocumentsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {files.map((file) => (
-                                <TableRow key={file.name} className="hover:bg-slate-50/50 group">
+                            {loading ? (
+                                <TableRow><TableCell colSpan={5} className="text-center">Loading documents...</TableCell></TableRow>
+                            ) : docs.length === 0 ? (
+                                <TableRow><TableCell colSpan={5} className="text-center">No documents found.</TableCell></TableRow>
+                            ) : docs.map((file) => (
+                                <TableRow key={file.id} className="hover:bg-slate-50/50 group">
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
@@ -142,21 +222,18 @@ export default function DocumentsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <span className="text-sm font-medium text-slate-600">{file.project}</span>
+                                        <span className="text-sm font-medium text-slate-600">General</span>
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
-                                        {file.modified}
+                                        {new Date(file.created_at).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell className="text-sm text-right font-mono text-muted-foreground">
-                                        {file.size}
+                                        {(file.size / 1024).toFixed(1)} MB
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Button variant="ghost" size="icon" className="h-8 w-8">
                                                 <Download className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <Share2 className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     </TableCell>

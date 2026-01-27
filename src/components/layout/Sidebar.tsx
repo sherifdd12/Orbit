@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button"
 
 export function AppSidebar() {
     const pathname = usePathname()
-    const { dict } = useLanguage()
+    const { dict, locale } = useLanguage()
 
     const menuItems = [
         { title: dict.sidebar.dashboard, icon: LayoutDashboard, href: "/dashboard" },
@@ -47,7 +47,7 @@ export function AppSidebar() {
     ]
 
     return (
-        <Sidebar variant="inset">
+        <Sidebar variant="inset" side={locale === "ar" ? "right" : "left"}>
             <SidebarHeader className="flex flex-row items-center gap-2 px-4 py-4">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <LayoutDashboard className="size-4" />
@@ -119,7 +119,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         </Button>
 
                         <div className="relative hidden md:block">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input
                                 type="search"
                                 placeholder="Search anything..."
