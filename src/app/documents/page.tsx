@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import {
-    Files,
-    Folder,
     Plus,
     Search,
     Download,
@@ -200,14 +198,9 @@ export default function DocumentsPage() {
                             ) : docs.map((file) => (
                                 <TableRow key={file.id} className="hover:bg-slate-50/50 group">
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                                                <Files className="h-5 w-5 text-slate-500 group-hover:text-blue-600" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{file.name}</span>
-                                                <span className="text-[10px] text-muted-foreground uppercase">{file.type}</span>
-                                            </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium">{file.name}</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase">{file.type}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -232,6 +225,6 @@ export default function DocumentsPage() {
                     </Table>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

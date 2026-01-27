@@ -2,12 +2,8 @@
 
 import * as React from "react"
 import {
-    DollarSign,
     Download,
-    Plus,
-    TrendingDown,
-    TrendingUp,
-    Loader2
+    Plus
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -15,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -30,7 +25,6 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -127,7 +121,7 @@ export default function FinancePage() {
                                     <div className="space-y-2"><Label>Amount</Label><Input type="number" value={newTx.amount} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} /></div>
                                     <div className="space-y-2">
                                         <Label>Type</Label>
-                                        <select className="w-full border rounded p-2" value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value as any })}>
+                                        <select className="w-full border rounded p-2" value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value as 'Income' | 'Expense' })}>
                                             <option value="Expense">Expense</option>
                                             <option value="Income">Income</option>
                                         </select>

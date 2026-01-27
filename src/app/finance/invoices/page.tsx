@@ -2,12 +2,7 @@
 
 import * as React from "react"
 import {
-    Plus,
-    FileText,
-    Download,
-    Loader2,
-    Search,
-    MoreHorizontal
+    Plus
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -61,8 +56,8 @@ export default function InvoicesPage() {
         due_date: new Date().toISOString().split('T')[0]
     })
 
-    const [customers, setCustomers] = React.useState<any[]>([])
-    const [projects, setProjects] = React.useState<any[]>([])
+    const [customers, setCustomers] = React.useState<{ id: string; name: string }[]>([])
+    const [projects, setProjects] = React.useState<{ id: string; title: string }[]>([])
 
     const supabase = createClient()
 

@@ -6,8 +6,7 @@ import {
     Search,
     MoreHorizontal,
     Download,
-    Package,
-    Loader2
+    Package
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -22,7 +21,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -37,7 +35,6 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,

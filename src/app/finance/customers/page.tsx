@@ -5,28 +5,22 @@ import {
     Plus,
     Search,
     MoreHorizontal,
-    User,
     Mail,
     Phone,
-    MapPin,
-    Loader2,
     Download
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
     Card,
     CardContent,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -41,7 +35,6 @@ import {
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,

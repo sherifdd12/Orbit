@@ -4,10 +4,6 @@ import * as React from "react"
 import {
     Plus,
     MoreHorizontal,
-    Calendar,
-    Target,
-    Clock,
-    ExternalLink,
     Loader2,
     Download
 } from "lucide-react"
@@ -22,18 +18,15 @@ import {
     CardTitle,
     CardFooter,
 } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
