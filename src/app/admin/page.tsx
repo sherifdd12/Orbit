@@ -10,9 +10,7 @@ import {
     UserPlus,
     MoreHorizontal,
     Search,
-    Check,
-    X
-} from "lucide-react"
+    Check} from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"

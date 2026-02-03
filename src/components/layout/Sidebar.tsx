@@ -12,7 +12,6 @@ import {
     Files,
     Search,
     Bell,
-    User,
     Globe,
     CheckSquare,
     FileText,
