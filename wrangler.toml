@@ -3,8 +3,10 @@ pages_build_output_dir = ".vercel/output/static"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://mmluyhfzowczieyrhuqt.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1tbHV5aGZ6b3djemlleXJodXF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzMjAwNTksImV4cCI6MjA4NDg5NjA1OX0.pG5mBJYFqFhR2RkuN4fPHVh00b3FUQFc-_vj6i655ro"
+# Environment variables should be set in Cloudflare Pages dashboard
+# Do not commit sensitive keys to version control
+# [vars]
+# NEXT_PUBLIC_SUPABASE_URL = "your_supabase_url"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY = "your_supabase_anon_key"
 NODE_VERSION = "20"
 NPM_CONFIG_LEGACY_PEER_DEPS = "true"
