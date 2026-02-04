@@ -42,16 +42,8 @@ export default async function DashboardPage() {
         redirect('/login')
     }
 
-    // Fetch multi-module statistics
-    const [
-        { count: itemsCount },
-        { count: lowStockCount },
-        { count: projectsCount },
-        { count: employeesCount },
-        { data: salesOrders },
-        { data: purchaseOrders },
-        { data: recentActivities }
-    ] = await Promise.all([
+    // Fetch multi-module statistics with safety
+    const results = await Promise.allSettled([
         supabase.from('items').select('*', { count: 'exact', head: true }),
         supabase.from('items').select('*', { count: 'exact', head: true }).lt('stock_quantity', 10),
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'Active'),
@@ -61,8 +53,16 @@ export default async function DashboardPage() {
         supabase.from('projects').select('*').order('created_at', { ascending: false }).limit(5)
     ])
 
-    const totalSales = salesOrders?.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) || 0;
-    const totalPurchases = purchaseOrders?.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) || 0;
+    const itemsCount = results[0].status === 'fulfilled' ? (results[0].value as any).count || 0 : 0;
+    const lowStockCount = results[1].status === 'fulfilled' ? (results[1].value as any).count || 0 : 0;
+    const projectsCount = results[2].status === 'fulfilled' ? (results[2].value as any).count || 0 : 0;
+    const employeesCount = results[3].status === 'fulfilled' ? (results[3].value as any).count || 0 : 0;
+    const salesOrders = results[4].status === 'fulfilled' ? (results[4].value as any).data : [];
+    const purchaseOrders = results[5].status === 'fulfilled' ? (results[5].value as any).data : [];
+    const recentActivities = results[6].status === 'fulfilled' ? (results[6].value as any).data : [];
+
+    const totalSales = (salesOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
+    const totalPurchases = (purchaseOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
 
     const stats = [
         {
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
-                            {recentActivities?.map((activity) => (
+                            {recentActivities?.map((activity: any) => (
                                 <div key={activity.id} className="flex items-center gap-4 group">
                                     <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
                                         <Briefcase className="h-5 w-5 text-slate-400 group-hover:text-primary" />
