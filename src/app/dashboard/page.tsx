@@ -51,7 +51,8 @@ export default async function DashboardPage() {
         supabase.from('employees').select('*', { count: 'exact', head: true }),
         supabase.from('sale_orders').select('total').eq('status', 'Confirmed'),
         supabase.from('purchase_orders').select('total').eq('status', 'Confirmed'),
-        supabase.from('projects').select('*').order('created_at', { ascending: false }).limit(5)
+        supabase.from('projects').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('system_settings').select('value').eq('key', 'base_currency').single()
     ])
 
     const itemsCount = results[0].status === 'fulfilled' ? (results[0].value as any).count || 0 : 0;
@@ -61,6 +62,8 @@ export default async function DashboardPage() {
     const salesOrders = results[4].status === 'fulfilled' ? (results[4].value as any).data : [];
     const purchaseOrders = results[5].status === 'fulfilled' ? (results[5].value as any).data : [];
     const recentActivities = results[6].status === 'fulfilled' ? (results[6].value as any).data : [];
+    const baseCurrencyRes = results[7].status === 'fulfilled' ? (results[7].value as any).data : null;
+    const currency = baseCurrencyRes?.value || "SAR";
 
     const totalSales = (salesOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
     const totalPurchases = (purchaseOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
@@ -68,7 +71,7 @@ export default async function DashboardPage() {
     const stats = [
         {
             title: "Confirmed Sales",
-            value: `${totalSales.toLocaleString()} SAR`,
+            value: `${totalSales.toLocaleString()} ${currency}`,
             description: "Total value of active sales orders",
             icon: DollarSign,
             trend: "up",
@@ -213,7 +216,7 @@ export default async function DashboardPage() {
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
                                     <span>Procurement (Purchases)</span>
-                                    <span>{totalPurchases.toLocaleString()} SAR</span>
+                                    <span>{totalPurchases.toLocaleString()} {currency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-orange-500 rounded-full" style={{ width: '65%' }} />
@@ -222,7 +225,7 @@ export default async function DashboardPage() {
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
                                     <span>Operations (Conf. Sales)</span>
-                                    <span>{totalSales.toLocaleString()} SAR</span>
+                                    <span>{totalSales.toLocaleString()} {currency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-emerald-500 rounded-full" style={{ width: '85%' }} />
@@ -230,7 +233,7 @@ export default async function DashboardPage() {
                             </div>
                             <div className="pt-4 border-t border-white/10 mt-2">
                                 <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Projected Net Flow</p>
-                                <h3 className="text-2xl font-black text-white">{(totalSales - totalPurchases).toLocaleString()} SAR</h3>
+                                <h3 className="text-2xl font-black text-white">{(totalSales - totalPurchases).toLocaleString()} {currency}</h3>
                             </div>
                         </CardContent>
                     </Card>

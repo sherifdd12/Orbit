@@ -44,6 +44,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -64,6 +65,7 @@ interface SalesOrder {
 
 export default function SalesOrdersPage() {
     const { dict, locale } = useLanguage()
+    const { formatMoney, currency } = useSettings()
     const [orders, setOrders] = React.useState<SalesOrder[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -148,7 +150,7 @@ export default function SalesOrdersPage() {
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-indigo-600">Total revenue</CardDescription>
                         <CardTitle className="text-2xl text-indigo-700">
-                            {orders.reduce((sum, o) => sum + (o.total || 0), 0).toLocaleString()} SAR
+                            {orders.reduce((sum, o) => sum + (o.total || 0), 0).toLocaleString()} {currency}
                         </CardTitle>
                     </CardHeader>
                 </Card>
@@ -197,7 +199,7 @@ export default function SalesOrdersPage() {
                                         <TableCell className="font-bold text-blue-600">{order.order_number}</TableCell>
                                         <TableCell>{order.customer?.name}</TableCell>
                                         <TableCell className="text-right font-mono font-bold">
-                                            {new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US', { style: 'currency', currency: 'SAR' }).format(order.total || 0)}
+                                            {formatMoney(order.total || 0)}
                                         </TableCell>
                                         <TableCell>{getStatusBadge(order.status)}</TableCell>
                                         <TableCell className="text-right pr-6">

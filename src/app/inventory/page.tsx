@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -72,6 +73,7 @@ interface Item {
 
 export default function InventoryPage() {
     const { dict, locale } = useLanguage()
+    const { currency, formatMoney } = useSettings()
     const [items, setItems] = React.useState<Item[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
@@ -177,7 +179,7 @@ export default function InventoryPage() {
                                     <Input placeholder="e.g. Pcs, Kg, Box" value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} />
                                 </div>
                                 <div className="space-y-2 col-span-2">
-                                    <Label>Average Cost (SAR)</Label>
+                                    <Label>Average Cost ({currency})</Label>
                                     <Input type="number" step="0.01" value={newItem.avg_cost} onChange={e => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })} />
                                 </div>
                             </div>
@@ -208,7 +210,7 @@ export default function InventoryPage() {
                 <Card className="border-none shadow-md bg-emerald-50/50 border-emerald-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-emerald-600">Total Inventory Value</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-emerald-700">{stats.totalValue.toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-emerald-700">{stats.totalValue.toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white">
@@ -289,10 +291,10 @@ export default function InventoryPage() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right font-mono text-sm">
-                                            {item.avg_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {formatMoney(item.avg_cost || 0)}
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-bold text-slate-900">
-                                            {(item.stock_quantity * item.avg_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {formatMoney((item.stock_quantity * item.avg_cost) || 0)}
                                         </TableCell>
                                         <TableCell className="text-right pr-6">
                                             <DropdownMenu>

@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout/Sidebar";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import { SettingsProvider } from "@/lib/context/SettingsContext";
 import { Locale } from "@/lib/i18n/dictionaries";
 import "./globals.css";
 
@@ -30,7 +31,9 @@ export default async function RootLayout({
     <html lang={locale} dir={isRTL ? "rtl" : "ltr"} className="light">
       <body className={`${inter.className} min-h-screen antialiased`}>
         <LanguageProvider initialLocale={locale}>
-          <AppLayout>{children}</AppLayout>
+          <SettingsProvider>
+            <AppLayout>{children}</AppLayout>
+          </SettingsProvider>
         </LanguageProvider>
       </body>
     </html>

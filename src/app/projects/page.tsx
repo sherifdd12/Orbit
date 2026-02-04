@@ -53,6 +53,7 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -70,6 +71,7 @@ interface Project {
 
 export default function ProjectsPage() {
     const { dict, locale } = useLanguage()
+    const { formatMoney, currency } = useSettings()
     const [projects, setProjects] = React.useState<Project[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isCreateOpen, setIsCreateOpen] = React.useState(false)
@@ -212,7 +214,7 @@ export default function ProjectsPage() {
                 <Card className="border-none shadow-md bg-white border-l-4 border-l-indigo-500">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Yield Pipeline</CardDescription>
-                        <CardTitle className="text-3xl font-black text-slate-800">SAR {projects.reduce((acc, p) => acc + (p.budget || 0), 0).toLocaleString()}</CardTitle>
+                        <CardTitle className="text-3xl font-black text-slate-800">{currency} {projects.reduce((acc, p) => acc + (p.budget || 0), 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-full">
@@ -314,7 +316,7 @@ export default function ProjectsPage() {
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end mb-1">
                                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Project Threshold (Budget)</span>
-                                        <span className="text-lg font-black text-slate-900">SAR {project.budget?.toLocaleString()}</span>
+                                        <span className="text-lg font-black text-slate-900">{formatMoney(project.budget || 0)}</span>
                                     </div>
                                     <Progress value={Math.min(100, (Math.random() * 60) + 20)} className="h-2 bg-slate-100 [&>div]:bg-indigo-600 shadow-inner" />
                                 </div>

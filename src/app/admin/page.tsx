@@ -54,6 +54,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -83,6 +84,7 @@ interface Permission {
 
 export default function AdminPage() {
     const { dict } = useLanguage()
+    const { currency, setCurrency } = useSettings()
     const [users, setUsers] = React.useState<User[]>([])
     const [roles, setRoles] = React.useState<Role[]>([])
     const [permissions, setPermissions] = React.useState<Permission[]>([])
@@ -379,6 +381,22 @@ export default function AdminPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Default Currency</Label>
+                                    <select
+                                        className="w-full border rounded-md p-2 h-10 bg-white"
+                                        value={currency}
+                                        onChange={(e) => setCurrency(e.target.value)}
+                                    >
+                                        <option value="SAR">SAR - Saudi Riyal</option>
+                                        <option value="USD">USD - US Dollar</option>
+                                        <option value="EUR">EUR - Euro</option>
+                                        <option value="GBP">GBP - British Pound</option>
+                                        <option value="AED">AED - UAE Dirham</option>
+                                        <option value="EGP">EGP - Egyptian Pound</option>
+                                    </select>
+                                    <p className="text-[10px] text-muted-foreground italic">Note: Changing this will update currency symbols across the entire application.</p>
+                                </div>
                                 <div className="space-y-2">
                                     <Label>Company Name</Label>
                                     <Input defaultValue="Orbit Foundation" />

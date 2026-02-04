@@ -46,6 +46,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -65,6 +66,7 @@ interface Invoice {
 
 export default function InvoicesPage() {
     const { dict, locale } = useLanguage()
+    const { formatMoney, currency } = useSettings()
     const [invoices, setInvoices] = React.useState<Invoice[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -134,21 +136,21 @@ export default function InvoicesPage() {
                     <div className="absolute top-0 right-0 p-3 opacity-10"><FileText className="h-12 w-12" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider">Total Invoiced</CardDescription>
-                        <CardTitle className="text-2xl">{invoices.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl">{invoices.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-emerald-50 relative">
                     <div className="absolute top-0 right-0 p-3 opacity-20"><CheckCircle2 className="h-12 w-12 text-emerald-600" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider text-emerald-600">Total Paid</CardDescription>
-                        <CardTitle className="text-2xl text-emerald-700">{invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl text-emerald-700">{invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-rose-50 relative">
                     <div className="absolute top-0 right-0 p-3 opacity-20"><AlertCircle className="h-12 w-12 text-rose-600" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider text-rose-600">Outstanding</CardDescription>
-                        <CardTitle className="text-2xl text-rose-700">{invoices.filter(i => i.status !== 'Paid' && i.status !== 'Cancelled').reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl text-rose-700">{invoices.filter(i => i.status !== 'Paid' && i.status !== 'Cancelled').reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-indigo-50 relative">
@@ -205,7 +207,7 @@ export default function InvoicesPage() {
                                         </TableCell>
                                         <TableCell className="font-medium">{invoice.customer?.name}</TableCell>
                                         <TableCell className="text-right font-mono font-bold text-slate-800">
-                                            {invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR
+                                            {formatMoney(invoice.amount || 0)}
                                         </TableCell>
                                         <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                                         <TableCell>
