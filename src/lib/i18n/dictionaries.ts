@@ -103,6 +103,14 @@ export const dictionaries = {
             warning: "Warning",
             info: "Info",
         },
+        // Operations (used across modules)
+        operations: {
+            customer: "Customer",
+            vendor: "Vendor",
+            project: "Project",
+            employee: "Employee",
+            warehouse: "Warehouse",
+        },
         // Finance Module
         finance: {
             title: "Finance & Accounting",
@@ -170,6 +178,7 @@ export const dictionaries = {
             customers: "Customers",
             quotations: "Quotations",
             salesOrders: "Sales Orders",
+            orders: "Sales Orders",
             invoices: "Invoices",
             payments: "Payments Received",
             newQuote: "New Quotation",
@@ -197,6 +206,7 @@ export const dictionaries = {
             title: "Purchasing",
             vendors: "Vendors",
             purchaseOrders: "Purchase Orders",
+            orders: "Purchase Orders",
             bills: "Bills",
             payments: "Payments Made",
             newVendor: "New Vendor",
@@ -425,6 +435,14 @@ export const dictionaries = {
             warning: "تحذير",
             info: "معلومات",
         },
+        // Operations (used across modules)
+        operations: {
+            customer: "العميل",
+            vendor: "المورد",
+            project: "المشروع",
+            employee: "الموظف",
+            warehouse: "المستودع",
+        },
         // Finance Module
         finance: {
             title: "المالية والمحاسبة",
@@ -492,6 +510,7 @@ export const dictionaries = {
             customers: "العملاء",
             quotations: "عروض الأسعار",
             salesOrders: "أوامر البيع",
+            orders: "أوامر البيع",
             invoices: "الفواتير",
             payments: "المدفوعات المستلمة",
             newQuote: "عرض سعر جديد",
@@ -519,6 +538,7 @@ export const dictionaries = {
             title: "المشتريات",
             vendors: "الموردين",
             purchaseOrders: "أوامر الشراء",
+            orders: "أوامر الشراء",
             bills: "فواتير الموردين",
             payments: "المدفوعات",
             newVendor: "مورد جديد",

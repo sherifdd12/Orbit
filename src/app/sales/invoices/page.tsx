@@ -104,7 +104,7 @@ export default function InvoicesPage() {
 
     const filtered = invoices.filter(i =>
         i.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.customer?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (i.customer?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     return (

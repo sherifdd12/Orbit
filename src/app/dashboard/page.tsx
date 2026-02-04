@@ -26,6 +26,7 @@ import { cookies } from "next/headers"
 import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -240,22 +241,30 @@ export default async function DashboardPage() {
                             <CardTitle className="text-sm font-bold">Operational Shortcuts</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-blue-50 hover:text-blue-700 transition-colors group">
-                                <ShoppingCart className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-bold">New Sale</span>
-                            </Button>
-                            <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
-                                <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-bold">New Employee</span>
-                            </Button>
-                            <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-orange-50 hover:text-orange-700 transition-colors group">
-                                <Package className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-bold">Check Stock</span>
-                            </Button>
-                            <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group">
-                                <Briefcase className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                                <span className="text-[10px] font-bold">Project Logs</span>
-                            </Button>
+                            <Link href="/sales/orders">
+                                <Button variant="outline" className="w-full h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                    <ShoppingCart className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[10px] font-bold">New Sale</span>
+                                </Button>
+                            </Link>
+                            <Link href="/hr/employees">
+                                <Button variant="outline" className="w-full h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
+                                    <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[10px] font-bold">New Employee</span>
+                                </Button>
+                            </Link>
+                            <Link href="/inventory">
+                                <Button variant="outline" className="w-full h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-orange-50 hover:text-orange-700 transition-colors group">
+                                    <Package className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[10px] font-bold">Check Stock</span>
+                                </Button>
+                            </Link>
+                            <Link href="/projects">
+                                <Button variant="outline" className="w-full h-auto py-3 px-2 flex flex-col gap-1 border-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-colors group">
+                                    <Briefcase className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                    <span className="text-[10px] font-bold">Project Logs</span>
+                                </Button>
+                            </Link>
                         </CardContent>
                     </Card>
                 </div>
