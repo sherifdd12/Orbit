@@ -10,7 +10,8 @@ import {
     UserPlus,
     MoreHorizontal,
     Search,
-    Check} from "lucide-react"
+    Check
+} from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
@@ -115,15 +116,25 @@ export default function AdminPage() {
         fetchData()
     }, [fetchData])
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const handleAssignRole = async () => {
         if (!selectedUser || !selectedRoleId) return
         const { error } = await supabase
             .from('profiles')
-            .update({ role_id: selectedRoleId })
+            .update({
+                role_id: selectedRoleId,
+                // Also update the 'role' text column for compatibility if it exists
+                role: roles.find(r => r.id === selectedRoleId)?.name || selectedUser.role
+            })
             .eq('id', selectedUser.id)
 
-        if (error) alert(error.message)
-        else {
+        if (error) {
+            console.error("Assign Role Error:", error)
+            alert(`Error: ${error.message}\n\nNote: If 'role_id' column is missing, please run the ADMIN_UPDATE.sql script in your Supabase SQL Editor.`)
+        } else {
             setIsRoleDialogOpen(false)
             setSelectedUser(null)
             fetchData()
@@ -133,7 +144,7 @@ export default function AdminPage() {
     const handleToggleUserStatus = async (user: User) => {
         const { error } = await supabase
             .from('profiles')
-            .update({ is_active: !user.is_active })
+            .update({ is_active: user.is_active === false })
             .eq('id', user.id)
 
         if (error) alert(error.message)
@@ -314,7 +325,12 @@ export default function AdminPage() {
                                             <CardDescription className="text-xs">{role.description || 'No description'}</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button variant="outline" size="sm" className="w-full">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full"
+                                                onClick={() => handleActionPlaceholder(`Edit Permissions for ${role.name}`)}
+                                            >
                                                 {dict.admin.editPermissions}
                                             </Button>
                                         </CardContent>
@@ -375,7 +391,7 @@ export default function AdminPage() {
                                     <Label>{dict.common.address}</Label>
                                     <Input placeholder="Company address" />
                                 </div>
-                                <Button className="w-full">{dict.common.save}</Button>
+                                <Button className="w-full" onClick={() => handleActionPlaceholder('Save Company Info')}>{dict.common.save}</Button>
                             </CardContent>
                         </Card>
 
@@ -392,21 +408,21 @@ export default function AdminPage() {
                                         <p className="font-medium">Email Notifications</p>
                                         <p className="text-sm text-muted-foreground">Receive email alerts for important events</p>
                                     </div>
-                                    <Button variant="outline" size="sm">Enable</Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Email Notifications')}>Enable</Button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">Low Stock Alerts</p>
                                         <p className="text-sm text-muted-foreground">Get notified when items fall below minimum</p>
                                     </div>
-                                    <Button variant="outline" size="sm">Enable</Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Low Stock Alerts')}>Enable</Button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">Payment Reminders</p>
                                         <p className="text-sm text-muted-foreground">Automatic reminders for overdue invoices</p>
                                     </div>
-                                    <Button variant="outline" size="sm">Enable</Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Payment Reminders')}>Enable</Button>
                                 </div>
                             </CardContent>
                         </Card>

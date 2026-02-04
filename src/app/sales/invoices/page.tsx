@@ -91,6 +91,10 @@ export default function InvoicesPage() {
         fetchData()
     }, [fetchData])
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const getStatusBadge = (status: Invoice['status']) => {
         switch (status) {
             case 'Paid': return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200"><CheckCircle2 className="h-3 w-3 mr-1" /> Paid</Badge>
@@ -115,8 +119,11 @@ export default function InvoicesPage() {
                     <p className="text-muted-foreground text-sm">Issue invoices, track payments, and manage aging receivables.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline"><Printer className="h-4 w-4 mr-2" /> Print Bulk</Button>
-                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-indigo-200 border-none px-6">
+                    <Button variant="outline" onClick={() => handleActionPlaceholder('Print Bulk')}><Printer className="h-4 w-4 mr-2" /> Print Bulk</Button>
+                    <Button
+                        onClick={() => handleActionPlaceholder('New Invoice')}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-indigo-200 border-none px-6"
+                    >
                         <Plus className="mr-2 h-4 w-4" /> New Invoice
                     </Button>
                 </div>
@@ -213,13 +220,13 @@ export default function InvoicesPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Invoice Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Invoice</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-emerald-600 font-bold"><CreditCard className="h-4 w-4" /> Register Payment</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('View Invoice')} className="gap-2"><Eye className="h-4 w-4" /> View Invoice</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Register Payment')} className="gap-2 text-emerald-600 font-bold"><CreditCard className="h-4 w-4" /> Register Payment</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="gap-2"><Printer className="h-4 w-4" /> Print PDF</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2"><Download className="h-4 w-4" /> Download</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Print PDF')} className="gap-2"><Printer className="h-4 w-4" /> Print PDF</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Download')} className="gap-2"><Download className="h-4 w-4" /> Download</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel Invoice</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Cancel Invoice')} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel Invoice</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

@@ -89,6 +89,10 @@ export default function PurchaseOrdersPage() {
         fetchData()
     }, [fetchData])
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const getStatusBadge = (status: PurchaseOrder['status']) => {
         switch (status) {
             case 'Confirmed': return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Confirmed</Badge>
@@ -113,7 +117,10 @@ export default function PurchaseOrdersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">{dict.purchasing.orders}</h2>
                     <p className="text-muted-foreground text-sm">Create and track purchase orders with vendors.</p>
                 </div>
-                <Button className="shadow-lg shadow-orange-200 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-none px-6">
+                <Button
+                    onClick={() => handleActionPlaceholder('Create Purchase Order')}
+                    className="shadow-lg shadow-orange-200 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-none px-6"
+                >
                     <Plus className="mr-2 h-4 w-4" /> Create Purchase Order
                 </Button>
             </div>
@@ -207,11 +214,11 @@ export default function PurchaseOrdersPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>PO Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-emerald-600 font-bold"><CheckCircle2 className="h-4 w-4" /> Receive Goods</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-blue-600 font-bold"><ShoppingBag className="h-4 w-4" /> Create Bill</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('View Details')} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Receive Goods')} className="gap-2 text-emerald-600 font-bold"><CheckCircle2 className="h-4 w-4" /> Receive Goods</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Create Bill')} className="gap-2 text-blue-600 font-bold"><ShoppingBag className="h-4 w-4" /> Create Bill</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel PO</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Cancel PO')} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel PO</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

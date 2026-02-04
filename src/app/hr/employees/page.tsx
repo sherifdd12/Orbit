@@ -118,6 +118,10 @@ export default function EmployeesPage() {
         setLoading(false)
     }, [supabase])
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     React.useEffect(() => {
         fetchData()
     }, [fetchData])
@@ -160,7 +164,7 @@ export default function EmployeesPage() {
                     <p className="text-muted-foreground text-sm">Manage employee records, contracts, and profiles.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline"><Download className="h-4 w-4 mr-2" /> {dict.common.export}</Button>
+                    <Button variant="outline" onClick={() => handleActionPlaceholder('Export')}><Download className="h-4 w-4 mr-2" /> {dict.common.export}</Button>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
                             <Button className="shadow-lg shadow-primary/20"><Plus className="h-4 w-4 mr-2" /> {dict.common.add}</Button>
@@ -225,7 +229,7 @@ export default function EmployeesPage() {
                             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input placeholder={dict.common.search + "..."} className="pl-9 bg-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
-                        <Button variant="ghost" size="sm" className="gap-2"><Filter className="h-4 w-4" /> Filters</Button>
+                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleActionPlaceholder('Filters')}><Filter className="h-4 w-4" /> Filters</Button>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -288,9 +292,9 @@ export default function EmployeesPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2"><Calendar className="h-4 w-4" /> Attendance Log</DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit')} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Attendance Log')} className="gap-2"><Calendar className="h-4 w-4" /> Attendance Log</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Terminate')} className="gap-2 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>

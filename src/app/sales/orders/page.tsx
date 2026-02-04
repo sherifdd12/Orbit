@@ -90,6 +90,10 @@ export default function SalesOrdersPage() {
         fetchData()
     }, [fetchData])
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const getStatusBadge = (status: SalesOrder['status']) => {
         switch (status) {
             case 'Confirmed': return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Confirmed</Badge>
@@ -113,7 +117,10 @@ export default function SalesOrdersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">{dict.sales.orders}</h2>
                     <p className="text-muted-foreground text-sm">Manage quotations, sales orders, and deliveries.</p>
                 </div>
-                <Button className="shadow-lg shadow-primary/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none">
+                <Button
+                    onClick={() => handleActionPlaceholder('Create Order')}
+                    className="shadow-lg shadow-primary/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none"
+                >
                     <Plus className="mr-2 h-4 w-4" /> Create Order
                 </Button>
             </div>
@@ -200,11 +207,11 @@ export default function SalesOrdersPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Order Management</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Confirm Order</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-blue-600"><Truck className="h-4 w-4" /> Ship / Deliver</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('View Details')} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Confirm Order')} className="gap-2 text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Confirm Order</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Ship / Deliver')} className="gap-2 text-blue-600"><Truck className="h-4 w-4" /> Ship / Deliver</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Cancel Order')} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

@@ -110,9 +110,13 @@ export default function WarehousesPage() {
         }
     }
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const filtered = warehouses.filter(w =>
-        w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.code.toLowerCase().includes(searchTerm.toLowerCase())
+        (w.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (w.code?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     return (
@@ -123,8 +127,11 @@ export default function WarehousesPage() {
                     <p className="text-slate-500 font-medium">Manage logistics nodes, storage capacities, and supply chain hubs.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" className="h-11 shadow-sm"><Navigation className="h-4 w-4 mr-2" /> Global Map</Button>
-                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-100 border-none h-11 px-6">
+                    <Button variant="outline" className="h-11 shadow-sm" onClick={() => handleActionPlaceholder('Global Map')}><Navigation className="h-4 w-4 mr-2" /> Global Map</Button>
+                    <Button
+                        onClick={() => handleActionPlaceholder('Add Logistics Node')}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-100 border-none h-11 px-6"
+                    >
                         <Plus className="mr-2 h-4 w-4" /> Add Logistics Node
                     </Button>
                 </div>
@@ -243,11 +250,11 @@ export default function WarehousesPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2">
                                                     <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Node Operations</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2 p-3 rounded-lg"><Eye className="h-4 w-4" /> Audit Inventory</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 p-3 rounded-lg"><Edit className="h-4 w-4" /> Node Settings</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 p-3 rounded-lg text-blue-600 font-bold"><ArrowRightLeft className="h-4 w-4" /> Inventory Transfer</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Audit Inventory')} className="gap-2 p-3 rounded-lg"><Eye className="h-4 w-4" /> Audit Inventory</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Node Settings')} className="gap-2 p-3 rounded-lg"><Edit className="h-4 w-4" /> Node Settings</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Inventory Transfer')} className="gap-2 p-3 rounded-lg text-blue-600 font-bold"><ArrowRightLeft className="h-4 w-4" /> Inventory Transfer</DropdownMenuItem>
                                                     <DropdownMenuSeparator className="my-1 bg-slate-100" />
-                                                    <DropdownMenuItem className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Decommission Node')} className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

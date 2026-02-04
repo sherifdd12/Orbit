@@ -122,6 +122,10 @@ export default function InventoryPage() {
         else fetchData()
     }
 
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
+    }
+
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,7 +146,7 @@ export default function InventoryPage() {
                     <p className="text-muted-foreground text-sm">Control your stock levels, track movements, and manage item master data.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="gap-2"><Download className="h-4 w-4" /> {dict.common.export}</Button>
+                    <Button variant="outline" className="gap-2" onClick={() => handleActionPlaceholder('Export')}><Download className="h-4 w-4" /> {dict.common.export}</Button>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
                             <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg border-none">
@@ -228,8 +232,8 @@ export default function InventoryPage() {
                             />
                         </div>
                         <div className="flex items-center gap-4">
-                            <Badge variant="outline" className="h-7 cursor-pointer hover:bg-slate-100"><Warehouse className="h-3 w-3 mr-1" /> Main Warehouse</Badge>
-                            <Button variant="outline" size="sm" className="bg-white"><Filter className="h-4 w-4" /></Button>
+                            <Badge variant="outline" className="h-7 cursor-pointer hover:bg-slate-100" onClick={() => handleActionPlaceholder('Warehouse Filter')}><Warehouse className="h-3 w-3 mr-1" /> Main Warehouse</Badge>
+                            <Button variant="outline" size="sm" className="bg-white" onClick={() => handleActionPlaceholder('Filters')}><Filter className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -297,9 +301,9 @@ export default function InventoryPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
                                                     <DropdownMenuLabel>Item Operations</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Transactions</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-blue-600"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('View Transactions')} className="gap-2"><Eye className="h-4 w-4" /> View Transactions</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit Item')} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Stock Adjustment')} className="gap-2 text-blue-600"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="gap-2 text-rose-600" onClick={() => handleDelete(item.id)}>
                                                         <Trash2 className="h-4 w-4" /> Delete Item

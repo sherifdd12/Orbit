@@ -119,7 +119,15 @@ export default function TasksPage() {
 
     const handleAddTask = async () => {
         if (!newTask.title) return alert("Title is required")
-        const { error } = await supabase.from('tasks').insert([newTask])
+
+        // Prepare data: convert empty strings to null for UUID fields
+        const taskToInsert = {
+            ...newTask,
+            project_id: newTask.project_id === '' ? null : newTask.project_id,
+            assignee_id: newTask.assignee_id === '' ? null : newTask.assignee_id
+        }
+
+        const { error } = await supabase.from('tasks').insert([taskToInsert])
 
         if (error) alert(error.message)
         else {
@@ -127,6 +135,17 @@ export default function TasksPage() {
             setNewTask({ title: '', description: '', status: 'To Do', priority: 'Medium', due_date: '', assignee_id: '', project_id: '' })
             fetchData()
         }
+    }
+
+    const handleDeleteTask = async (id: string, title: string) => {
+        if (!confirm(`Are you sure you want to delete task "${title}"?`)) return
+        const { error } = await supabase.from('tasks').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleActionPlaceholder = (action: string) => {
+        alert(`${action} feature is under development. Coming soon!`)
     }
 
     const toggleStatus = async (task: Task) => {
@@ -316,10 +335,10 @@ export default function TasksPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none">
                                                 <DropdownMenuLabel className="uppercase text-[10px] tracking-widest text-slate-400">Deliverable Control</DropdownMenuLabel>
-                                                <DropdownMenuItem className="gap-2 p-3"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2 p-3"><Flag className="h-4 w-4" /> Change Priority</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit')} className="gap-2 p-3"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Priority')} className="gap-2 p-3"><Flag className="h-4 w-4" /> Change Priority</DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => fetchData()} className="gap-2 p-3 text-rose-600"><Trash2 className="h-4 w-4" /> Delete Task</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteTask(task.id, task.title)} className="gap-2 p-3 text-rose-600"><Trash2 className="h-4 w-4" /> Delete Task</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
