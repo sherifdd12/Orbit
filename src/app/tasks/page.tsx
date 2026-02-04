@@ -215,25 +215,25 @@ export default function TasksPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight">Total Tasks</CardPlaceholder>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight">Total Tasks</CardDescription>
                         <CardTitle className="text-2xl font-black">{tasks.length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-blue-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-blue-600">Pending</CardPlaceholder>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-blue-600">Pending</CardDescription>
                         <CardTitle className="text-2xl font-black text-blue-700">{tasks.filter(t => t.status !== 'Done').length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-emerald-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-emerald-600">Finalized</CardPlaceholder>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-emerald-600">Finalized</CardDescription>
                         <CardTitle className="text-2xl font-black text-emerald-700">{tasks.filter(t => t.status === 'Done').length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-rose-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-rose-600">Critical Priority</CardPlaceholder>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-rose-600">Critical Priority</CardDescription>
                         <CardTitle className="text-2xl font-black text-rose-700">{tasks.filter(t => t.priority === 'Critical').length}</CardTitle>
                     </CardHeader>
                 </Card>

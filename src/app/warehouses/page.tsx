@@ -148,7 +148,7 @@ export default function WarehousesPage() {
                 <Card className="border-none shadow-md bg-white relative group">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform"><Truck className="h-12 w-12" /></div>
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-[10px] font-bold uppercase tracking-widest">In-Transit</CardPlaceholder>
+                        <CardDescription className="text-[10px] font-bold uppercase tracking-widest">In-Transit</CardDescription>
                         <CardTitle className="text-3xl font-black">408 Units</CardTitle>
                     </CardHeader>
                 </Card>

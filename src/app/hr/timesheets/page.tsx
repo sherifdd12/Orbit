@@ -101,7 +101,7 @@ export default function TimesheetsPage() {
                 employee: { full_name: t.employee?.profile?.full_name || 'Unknown' },
                 project: { name: t.project?.name || 'General' }
             }))
-            setRequests(flattened) // Typo fix
+
             setTimesheets(flattened)
         }
 
@@ -205,13 +205,13 @@ export default function TimesheetsPage() {
                 </Card>
                 <Card className="border-none shadow-md">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs uppercase font-bold tracking-widest text-emerald-600">Billable Ratio</CardTitle>
+                        <CardDescription className="text-xs uppercase font-bold tracking-widest text-emerald-600">Billable Ratio</CardDescription>
                         <div className="text-3xl font-bold">88.4%</div>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs uppercase font-bold tracking-widest text-blue-600">Active Logs</CardTitle>
+                        <CardDescription className="text-xs uppercase font-bold tracking-widest text-blue-600">Active Logs</CardDescription>
                         <div className="text-3xl font-bold">{timesheets.length}</div>
                     </CardHeader>
                 </Card>
