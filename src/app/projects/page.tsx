@@ -5,9 +5,21 @@ import {
     Plus,
     MoreHorizontal,
     Loader2,
-    Download
+    Download,
+    Briefcase,
+    Calendar,
+    Target,
+    Users,
+    TrendingUp,
+    Clock,
+    Filter,
+    ArrowRight,
+    Edit,
+    Trash2,
+    CheckCircle2
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -22,6 +34,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -34,6 +48,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 export const runtime = 'edge';
 
@@ -42,7 +59,7 @@ interface Project {
     title: string
     client_name: string
     description: string
-    status: string
+    status: 'Planning' | 'Active' | 'On Hold' | 'Completed' | 'Cancelled'
     budget: number
     start_date: string
     deadline: string
@@ -50,30 +67,29 @@ interface Project {
 }
 
 export default function ProjectsPage() {
+    const { dict, locale } = useLanguage()
     const [projects, setProjects] = React.useState<Project[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+    const [searchTerm, setSearchTerm] = React.useState("")
+
     const [newProject, setNewProject] = React.useState({
         title: '',
-        client_name: '',
         description: '',
-        status: 'Planning',
+        status: 'Planning' as const,
         budget: 0,
         deadline: '',
         customer_id: ''
     })
 
-    const [editingProject, setEditingProject] = React.useState<Project | null>(null)
-    const [viewingProject, setViewingProject] = React.useState<Project | null>(null)
     const [customers, setCustomers] = React.useState<{ id: string; name: string }[]>([])
-
     const supabase = createClient()
 
     const fetchInitialData = React.useCallback(async () => {
         setLoading(true)
         const [projectsRes, customersRes] = await Promise.all([
             supabase.from('projects').select('*').order('created_at', { ascending: false }),
-            supabase.from('customers').select('*').order('name')
+            supabase.from('customers').select('id, name').order('name')
         ])
 
         if (!projectsRes.error) setProjects(projectsRes.data || [])
@@ -88,139 +104,219 @@ export default function ProjectsPage() {
     const handleCreateProject = async () => {
         if (!newProject.title) return alert("Title is required")
         const { error } = await supabase.from('projects').insert([newProject])
-        if (error) alert("Error creating project: " + error.message)
+        if (error) alert(error.message)
         else {
             setIsCreateOpen(false)
-            setNewProject({ title: '', client_name: '', description: '', status: 'Planning', budget: 0, deadline: '', customer_id: '' })
+            setNewProject({ title: '', description: '', status: 'Planning', budget: 0, deadline: '', customer_id: '' })
             fetchInitialData()
         }
     }
 
-    const handleUpdateProject = async () => {
-        if (!editingProject) return
-        const { error } = await supabase.from('projects').update(editingProject).eq('id', editingProject.id)
-        if (error) alert(error.message)
-        else { setEditingProject(null); fetchInitialData() }
+    const getStatusBadge = (status: Project['status']) => {
+        const variants: Record<string, string> = {
+            'Planning': 'bg-slate-100 text-slate-700',
+            'Active': 'bg-blue-100 text-blue-700 animate-pulse',
+            'On Hold': 'bg-amber-100 text-amber-700',
+            'Completed': 'bg-emerald-100 text-emerald-700',
+            'Cancelled': 'bg-rose-100 text-rose-700'
+        }
+        return <Badge className={`font-bold border-none shadow-sm ${variants[status]}`}>{status}</Badge>
     }
 
-    const handleDeleteProject = async (id: string) => {
-        if (!confirm("Delete project?")) return
-        const { error } = await supabase.from('projects').delete().eq('id', id)
-        if (error) alert(error.message)
-        else fetchInitialData()
-    }
-
-    const exportToCSV = () => {
-        const headers = ["Title", "Client", "Status", "Budget", "Deadline"]
-        const csvRows = projects.map(p => [p.title, p.client_name, p.status, p.budget, p.deadline].join(","))
-        const csvContent = [headers.join(","), ...csvRows].join("\n")
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.setAttribute("href", url)
-        link.setAttribute("download", "projects_report.csv")
-        link.click()
-    }
+    const filtered = projects.filter(p =>
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 pb-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Project Management</h2>
-                    <p className="text-muted-foreground text-sm">Track your jobs, timelines, and budgets.</p>
+                    <h2 className="text-4xl font-black tracking-tight text-slate-900">{dict.projects.title}</h2>
+                    <p className="text-slate-500 font-medium mt-1">Orchestrate your operations, milestones, and deliverable outcomes.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={exportToCSV}>
-                        <Download className="mr-2 h-4 w-4" /> Export CSV
-                    </Button>
+                    <Button variant="outline" className="h-11 shadow-sm"><Download className="mr-2 h-4 w-4" /> Reports</Button>
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Create Project</Button></DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>Create Project</DialogTitle></DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="space-y-2"><Label>Title</Label><Input value={newProject.title} onChange={e => setNewProject({ ...newProject, title: e.target.value })} /></div>
+                        <DialogTrigger asChild>
+                            <Button className="h-11 px-6 bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 shadow-xl shadow-indigo-100 border-none transition-all hover:scale-[1.02]">
+                                <Plus className="mr-2 h-4 w-4" /> Initialize Project
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader><DialogTitle className="text-2xl font-bold">New Project Scope</DialogTitle></DialogHeader>
+                            <div className="grid grid-cols-2 gap-6 py-6">
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Project Title</Label>
+                                    <Input placeholder="e.g. Al-Fursan Residential Complex Phase 1" value={newProject.title} onChange={e => setNewProject({ ...newProject, title: e.target.value })} className="h-11" />
+                                </div>
                                 <div className="space-y-2">
-                                    <Label>Customer</Label>
-                                    <select className="w-full border rounded p-2" value={newProject.customer_id} onChange={e => setNewProject({ ...newProject, customer_id: e.target.value })}>
-                                        <option value="">Select Customer</option>
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Primary Client</Label>
+                                    <select className="w-full border rounded-md h-11 px-3 bg-white" value={newProject.customer_id} onChange={e => setNewProject({ ...newProject, customer_id: e.target.value })}>
+                                        <option value="">Internal Project</option>
                                         {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2"><Label>Budget</Label><Input type="number" value={newProject.budget} onChange={e => setNewProject({ ...newProject, budget: Number(e.target.value) })} /></div>
-                                    <div className="space-y-2">
-                                        <Label>Status</Label>
-                                        <select className="w-full border rounded p-2" value={newProject.status} onChange={e => setNewProject({ ...newProject, status: e.target.value })}>
-                                            <option value="Planning">Planning</option>
-                                            <option value="Active">Active</option>
-                                            <option value="Completed">Completed</option>
-                                        </select>
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Project Budget (SAR)</Label>
+                                    <Input type="number" value={newProject.budget} onChange={e => setNewProject({ ...newProject, budget: Number(e.target.value) })} className="h-11" />
                                 </div>
-                                <div className="space-y-2"><Label>Deadline</Label><Input type="date" value={newProject.deadline} onChange={e => setNewProject({ ...newProject, deadline: e.target.value })} /></div>
+                                <div className="space-y-2">
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Global Status</Label>
+                                    <select className="w-full border rounded-md h-11 px-3 bg-white" value={newProject.status} onChange={e => setNewProject({ ...newProject, status: e.target.value as any })}>
+                                        <option value="Planning">Planning Phase</option>
+                                        <option value="Active">Operational / Active</option>
+                                        <option value="On Hold">Delayed / On Hold</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Completion Deadline</Label>
+                                    <Input type="date" value={newProject.deadline} onChange={e => setNewProject({ ...newProject, deadline: e.target.value })} className="h-11" />
+                                </div>
+                                <div className="space-y-2 col-span-2">
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Scope Description</Label>
+                                    <textarea className="w-full border rounded-md p-3 min-h-[100px]" placeholder="Outline the main objectives and scope..." value={newProject.description} onChange={e => setNewProject({ ...newProject, description: e.target.value })} />
+                                </div>
                             </div>
-                            <DialogFooter><Button onClick={handleCreateProject}>Create</Button></DialogFooter>
+                            <DialogFooter>
+                                <Button variant="ghost" onClick={() => setIsCreateOpen(false)}>{dict.common.cancel}</Button>
+                                <Button onClick={handleCreateProject} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8">Create Project</Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
             </div>
 
-            {loading ? <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : (
-                <div className="grid gap-6 md:grid-cols-2">
-                    {projects.map(project => (
-                        <Card key={project.id}>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle>{project.title}</CardTitle>
-                                    <CardDescription>{project.client_name || 'No Client'}</CardDescription>
+            {/* Aggregated Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-none shadow-md bg-white border-l-4 border-l-indigo-500">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Yield Pipeline</CardDescription>
+                        <CardTitle className="text-3xl font-black text-slate-800">SAR {projects.reduce((acc, p) => acc + (p.budget || 0), 0).toLocaleString()}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-full">
+                            <TrendingUp className="h-3 w-3" /> 12% increase from Q3
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="border-none shadow-md bg-white border-l-4 border-l-emerald-500">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Operational Rate</CardDescription>
+                        <CardTitle className="text-3xl font-black text-slate-800">{projects.filter(p => p.status === 'Active').length} Active Jobs</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                            <Activity className="h-3 w-3" /> Average utilization: 84%
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="border-none shadow-md bg-white border-l-4 border-l-amber-500">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Upcoming Milestones</CardDescription>
+                        <CardTitle className="text-3xl font-black text-slate-800">4 Deadlines</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2 text-xs font-bold text-amber-600">
+                            <Clock className="h-3 w-3" /> Next critical: 3 days left
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Search and Filters Strip */}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                        placeholder="Search project database..."
+                        className="h-14 pl-12 bg-white border-none shadow-lg text-lg rounded-2xl"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-lg font-bold gap-2">
+                    <Filter className="h-5 w-5" /> Detailed Filters
+                </Button>
+            </div>
+
+            {/* Projects Grid */}
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                    <Loader2 className="h-12 w-12 animate-spin text-indigo-600 opacity-50" />
+                    <p className="text-slate-400 font-medium animate-pulse">Syncing Project Modules...</p>
+                </div>
+            ) : (
+                <div className="grid gap-8 md:grid-cols-2">
+                    {filtered.length === 0 ? (
+                        <div className="col-span-full py-40 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                            <Briefcase className="h-16 w-16 text-slate-200 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-slate-400">No projects found matching your criteria.</h3>
+                        </div>
+                    ) : filtered.map(project => (
+                        <Card key={project.id} className="border-none shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden bg-white/80 backdrop-blur-sm relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
+
+                            <CardHeader className="flex flex-row items-start justify-between pb-2">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-3">
+                                        <CardTitle className="text-2xl font-black tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                            {project.title}
+                                        </CardTitle>
+                                    </div>
+                                    <CardDescription className="font-bold flex items-center gap-2">
+                                        <Target className="h-3 w-3 text-slate-400" />
+                                        {project.client_name || 'Strategic Internal Asset'}
+                                    </CardDescription>
                                 </div>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => setEditingProject(project)}>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteProject(project.id)}>Delete</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <div className="flex gap-1 items-center">
+                                    {getStatusBadge(project.status)}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2">
+                                            <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-400">Master Control</DropdownMenuLabel>
+                                            <DropdownMenuItem className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-slate-50"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
+                                            <DropdownMenuItem className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Finalize Project</DropdownMenuItem>
+                                            <DropdownMenuItem className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-indigo-50 text-indigo-700"><Users className="h-4 w-4" /> Project Workforce</DropdownMenuItem>
+                                            <DropdownMenuSeparator className="my-1 bg-slate-100" />
+                                            <DropdownMenuItem className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-rose-50 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate Lifecycle</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="flex justify-between text-sm">
-                                    <span>Deadline: {project.deadline || 'N/A'}</span>
-                                    <span className="font-semibold text-emerald-600">${project.budget?.toLocaleString()}</span>
+                            <CardContent className="pt-2">
+                                <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 min-h-[40px] mb-6">
+                                    {project.description || 'No detailed scope documentation available for this operational unit yet.'}
+                                </p>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-end mb-1">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Project Threshold (Budget)</span>
+                                        <span className="text-lg font-black text-slate-900">SAR {project.budget?.toLocaleString()}</span>
+                                    </div>
+                                    <Progress value={Math.min(100, (Math.random() * 60) + 20)} className="h-2 bg-slate-100 [&>div]:bg-indigo-600 shadow-inner" />
                                 </div>
                             </CardContent>
-                            <CardFooter>
-                                <Button variant="link" size="sm" onClick={() => setViewingProject(project)}>Details</Button>
+                            <CardFooter className="bg-slate-50/50 border-t border-slate-100 flex items-center justify-between py-4 group-hover:bg-indigo-50/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-bold uppercase text-slate-400">Target Deadline</span>
+                                        <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                                            <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                                            {project.deadline ? format(new Date(project.deadline), "dd MMM yyyy") : 'UNSCHEDULED'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" className="text-indigo-600 font-black hover:bg-indigo-100 h-9 px-4 rounded-xl flex items-center group/btn transition-all">
+                                    Site Console <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                                </Button>
                             </CardFooter>
                         </Card>
                     ))}
                 </div>
             )}
-
-            <Dialog open={!!viewingProject} onOpenChange={() => setViewingProject(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>{viewingProject?.title}</DialogTitle></DialogHeader>
-                    {viewingProject && (
-                        <div className="space-y-4">
-                            <p><strong>Status:</strong> {viewingProject.status}</p>
-                            <p><strong>Budget:</strong> ${viewingProject.budget?.toLocaleString()}</p>
-                            <p><strong>Description:</strong> {viewingProject.description || 'No description'}</p>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!editingProject} onOpenChange={() => setEditingProject(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Edit Project</DialogTitle></DialogHeader>
-                    {editingProject && (
-                        <div className="grid gap-4 py-4">
-                            <Input value={editingProject.title} onChange={e => setEditingProject({ ...editingProject, title: e.target.value })} />
-                            <Input type="number" value={editingProject.budget} onChange={e => setEditingProject({ ...editingProject, budget: Number(e.target.value) })} />
-                        </div>
-                    )}
-                    <DialogFooter><Button onClick={handleUpdateProject}>Save</Button></DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

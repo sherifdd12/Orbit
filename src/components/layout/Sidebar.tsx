@@ -240,6 +240,8 @@ export function AppSidebar() {
     )
 }
 
+import { NotificationCenter } from "@/components/notifications/NotificationCenter"
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { locale, setLocale, dict } = useLanguage()
 
@@ -273,10 +275,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                                 className="ps-9 h-10 w-64 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </div>
-                        <button className="relative p-2 rounded-full hover:bg-muted transition-colors">
-                            <Bell className="size-5 text-muted-foreground" />
-                            <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-                        </button>
+
+                        <NotificationCenter />
+
                         <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow cursor-pointer">
                             OA
                         </div>

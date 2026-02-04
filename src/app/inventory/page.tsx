@@ -6,7 +6,17 @@ import {
     Search,
     MoreHorizontal,
     Download,
-    Package
+    Package,
+    AlertCircle,
+    TrendingUp,
+    TrendingDown,
+    Warehouse,
+    Filter,
+    Edit,
+    Trash2,
+    Eye,
+    Barcode,
+    Box
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -16,11 +26,15 @@ import {
     Card,
     CardContent,
     CardHeader,
+    CardTitle,
+    CardDescription
 } from "@/components/ui/card"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
@@ -41,8 +55,10 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
-// Define Item Interface
+export const runtime = 'edge';
+
 interface Item {
     id: string
     name: string
@@ -54,12 +70,13 @@ interface Item {
     status?: string
 }
 
-export const runtime = 'edge';
-
 export default function InventoryPage() {
+    const { dict, locale } = useLanguage()
     const [items, setItems] = React.useState<Item[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const [searchTerm, setSearchTerm] = React.useState("")
+
     const [newItem, setNewItem] = React.useState({
         name: '',
         sku: '',
@@ -69,15 +86,9 @@ export default function InventoryPage() {
         avg_cost: 0
     })
 
-    const [editingItem, setEditingItem] = React.useState<Item | null>(null)
-    const [viewingItem, setViewingItem] = React.useState<Item | null>(null)
-    const [isCustomCategory, setIsCustomCategory] = React.useState(false)
-    const [customCategory, setCustomCategory] = React.useState("")
-    const [searchTerm, setSearchTerm] = React.useState("")
-
     const supabase = createClient()
 
-    const fetchItems = React.useCallback(async () => {
+    const fetchData = React.useCallback(async () => {
         setLoading(true)
         const { data, error } = await supabase
             .from('items')
@@ -89,62 +100,26 @@ export default function InventoryPage() {
     }, [supabase])
 
     React.useEffect(() => {
-        fetchItems()
-    }, [fetchItems])
+        fetchData()
+    }, [fetchData])
 
     const handleAddItem = async () => {
         if (!newItem.name || !newItem.sku) return alert("Name and SKU are required")
-        const finalCategory = isCustomCategory ? customCategory : newItem.category
-        const { error } = await supabase.from('items').insert([{
-            ...newItem,
-            category: finalCategory
-        }])
+        const { error } = await supabase.from('items').insert([newItem])
 
-        if (error) alert("Failed to create item: " + error.message)
+        if (error) alert(error.message)
         else {
             setIsAddOpen(false)
             setNewItem({ name: '', sku: '', category: '', stock_quantity: 0, uom: 'pcs', avg_cost: 0 })
-            setCustomCategory("")
-            setIsCustomCategory(false)
-            fetchItems()
+            fetchData()
         }
     }
 
-    const handleUpdateItem = async () => {
-        if (!editingItem) return
-        const { error } = await supabase.from('items').update({
-            name: editingItem.name,
-            sku: editingItem.sku,
-            category: editingItem.category,
-            stock_quantity: editingItem.stock_quantity,
-            uom: editingItem.uom,
-            avg_cost: editingItem.avg_cost
-        }).eq('id', editingItem.id)
-
-        if (error) alert(error.message)
-        else {
-            setEditingItem(null)
-            fetchItems()
-        }
-    }
-
-    const handleDeleteItem = async (id: string) => {
-        if (!confirm("Delete this item?")) return
+    const handleDelete = async (id: string) => {
+        if (!confirm(dict.common.confirm + "?")) return
         const { error } = await supabase.from('items').delete().eq('id', id)
         if (error) alert(error.message)
-        else fetchItems()
-    }
-
-    const exportToCSV = () => {
-        const headers = ["Name", "SKU", "Category", "Stock", "Unit", "Avg Cost"]
-        const csvRows = items.map(i => [i.name, i.sku, i.category, i.stock_quantity, i.uom, i.avg_cost].join(","))
-        const csvContent = [headers.join(","), ...csvRows].join("\n")
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.setAttribute("href", url)
-        link.setAttribute("download", "inventory_report.csv")
-        link.click()
+        else fetchData()
     }
 
     const filteredItems = items.filter(item =>
@@ -152,69 +127,183 @@ export default function InventoryPage() {
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
+    const stats = {
+        totalItems: items.length,
+        lowStock: items.filter(i => i.stock_quantity < 10).length,
+        totalValue: items.reduce((sum, i) => sum + (i.stock_quantity * i.avg_cost), 0),
+        categories: new Set(items.map(i => i.category)).size
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Inventory Master</h2>
-                    <p className="text-muted-foreground text-sm">Manage your products and materials.</p>
+                    <h2 className="text-3xl font-bold tracking-tight">{dict.inventory.title}</h2>
+                    <p className="text-muted-foreground text-sm">Control your stock levels, track movements, and manage item master data.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={exportToCSV}>
-                        <Download className="mr-2 h-4 w-4" /> Export CSV
-                    </Button>
+                    <Button variant="outline" className="gap-2"><Download className="h-4 w-4" /> {dict.common.export}</Button>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Item</Button></DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>Add New Item</DialogTitle></DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Name</Label><Input value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} className="col-span-3" /></div>
-                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">SKU</Label><Input value={newItem.sku} onChange={e => setNewItem({ ...newItem, sku: e.target.value })} className="col-span-3" /></div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label className="text-right">Category</Label>
-                                    <div className="col-span-3 flex flex-col gap-2">
-                                        <select className="border rounded p-2 text-sm" value={isCustomCategory ? "NEW" : newItem.category} onChange={e => {
-                                            if (e.target.value === "NEW") setIsCustomCategory(true)
-                                            else { setIsCustomCategory(false); setNewItem({ ...newItem, category: e.target.value }) }
-                                        }}>
-                                            <option value="">Select Category</option>
-                                            {[...new Set(items.map(i => i.category))].filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}
-                                            <option value="NEW">+ Add New Category</option>
-                                        </select>
-                                        {isCustomCategory && <Input placeholder="New Category Name" value={customCategory} onChange={e => setCustomCategory(e.target.value)} />}
-                                    </div>
+                        <DialogTrigger asChild>
+                            <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg border-none">
+                                <Plus className="mr-2 h-4 w-4" /> {dict.common.add} {dict.inventory.itemName}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-xl">
+                            <DialogHeader><DialogTitle>Register New Component / Product</DialogTitle></DialogHeader>
+                            <div className="grid grid-cols-2 gap-4 py-4">
+                                <div className="space-y-2 col-span-2">
+                                    <Label>Item Name</Label>
+                                    <Input value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} />
                                 </div>
-                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Stock/Unit</Label><div className="col-span-3 flex gap-2"><Input type="number" value={newItem.stock_quantity} onChange={e => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })} /><Input placeholder="Unit" value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} /></div></div>
-                                <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Avg. Cost</Label><Input type="number" className="col-span-3" value={newItem.avg_cost} onChange={e => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })} /></div>
+                                <div className="space-y-2">
+                                    <Label>SKU / Barcode</Label>
+                                    <Input value={newItem.sku} onChange={e => setNewItem({ ...newItem, sku: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Input value={newItem.category} onChange={e => setNewItem({ ...newItem, category: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Initial Stock</Label>
+                                    <Input type="number" value={newItem.stock_quantity} onChange={e => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Unit of Measure (UOM)</Label>
+                                    <Input placeholder="e.g. Pcs, Kg, Box" value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} />
+                                </div>
+                                <div className="space-y-2 col-span-2">
+                                    <Label>Average Cost (SAR)</Label>
+                                    <Input type="number" step="0.01" value={newItem.avg_cost} onChange={e => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })} />
+                                </div>
                             </div>
-                            <DialogFooter><Button onClick={handleAddItem}>Save</Button></DialogFooter>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsAddOpen(false)}>{dict.common.cancel}</Button>
+                                <Button onClick={handleAddItem}>{dict.common.save}</Button>
+                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
             </div>
 
-            <Card>
-                <CardHeader><div className="relative w-full md:w-96"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input placeholder="Search..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div></CardHeader>
-                <CardContent>
-                    <div className="rounded-md border">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="border-none shadow-md bg-white">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-slate-500">Total SKU Count</CardDescription>
+                        <CardTitle className="text-2xl font-bold">{stats.totalItems}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-rose-50/50 border-rose-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-rose-600 flex items-center gap-2">
+                            <AlertCircle className="h-3 w-3" /> Low Stock Alerts
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-rose-700">{stats.lowStock}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-emerald-50/50 border-emerald-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">Total Inventory Value</CardDescription>
+                        <CardTitle className="text-2xl font-bold text-emerald-700">{stats.totalValue.toLocaleString()} SAR</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-white">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-slate-500">Categories</CardDescription>
+                        <CardTitle className="text-2xl font-bold">{stats.categories}</CardTitle>
+                    </CardHeader>
+                </Card>
+            </div>
+
+            <Card className="border-none shadow-xl bg-white overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={dict.common.search + " inventory..."}
+                                className="pl-9 bg-white"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Badge variant="outline" className="h-7 cursor-pointer hover:bg-slate-100"><Warehouse className="h-3 w-3 mr-1" /> Main Warehouse</Badge>
+                            <Button variant="outline" size="sm" className="bg-white"><Filter className="h-4 w-4" /></Button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="overflow-x-auto">
                         <Table>
-                            <TableHeader><TableRow><TableHead></TableHead><TableHead>Name</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Stock</TableHead><TableHead className="text-right">Cost</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                            <TableHeader>
+                                <TableRow className="bg-slate-50/20">
+                                    <TableHead className="pl-6 w-12"></TableHead>
+                                    <TableHead>{dict.inventory.itemName}</TableHead>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead className="text-right">On Hand</TableHead>
+                                    <TableHead className="text-right">Avg Cost</TableHead>
+                                    <TableHead className="text-right">Total Value</TableHead>
+                                    <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
+                                </TableRow>
+                            </TableHeader>
                             <TableBody>
-                                {loading ? <TableRow><TableCell colSpan={7} className="text-center py-10">Loading...</TableCell></TableRow> : filteredItems.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell><Package className="h-4 w-4 text-muted-foreground" /></TableCell>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell className="font-mono text-xs">{item.sku}</TableCell>
-                                        <TableCell><Badge variant="secondary">{item.category}</Badge></TableCell>
-                                        <TableCell className="text-right font-semibold">{item.stock_quantity} {item.uom}</TableCell>
-                                        <TableCell className="text-right font-mono">${(item.avg_cost || 0).toFixed(2)}</TableCell>
+                                {loading ? (
+                                    <TableRow><TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell></TableRow>
+                                ) : filteredItems.length === 0 ? (
+                                    <TableRow><TableCell colSpan={7} className="text-center py-20 text-muted-foreground">No items found.</TableCell></TableRow>
+                                ) : filteredItems.map(item => (
+                                    <TableRow key={item.id} className="group hover:bg-slate-50/50 transition-colors">
+                                        <TableCell className="pl-6">
+                                            <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                                <Package className="h-4 w-4" />
+                                            </div>
+                                        </TableCell>
                                         <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-900">{item.name}</span>
+                                                <span className="text-[10px] font-mono text-muted-foreground flex items-center gap-1 uppercase tracking-tight">
+                                                    <Barcode className="h-2.5 w-2.5" /> {item.sku}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-medium h-5">
+                                                {item.category || 'General'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className={`font-bold ${item.stock_quantity < 10 ? 'text-rose-600' : 'text-slate-900'}`}>
+                                                    {item.stock_quantity.toLocaleString()} {item.uom}
+                                                </span>
+                                                {item.stock_quantity < 10 && (
+                                                    <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-0.5">
+                                                        <TrendingDown className="h-2 w-2" /> REORDER
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-sm">
+                                            {item.avg_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-bold text-slate-900">
+                                            {(item.stock_quantity * item.avg_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </TableCell>
+                                        <TableCell className="text-right pr-6">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => setEditingItem(item)}>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => setViewingItem(item)}>View</DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(item.id)}>Delete</DropdownMenuItem>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48">
+                                                    <DropdownMenuLabel>Item Operations</DropdownMenuLabel>
+                                                    <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Transactions</DropdownMenuItem>
+                                                    <DropdownMenuItem className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                    <DropdownMenuItem className="gap-2 text-blue-600"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="gap-2 text-rose-600" onClick={() => handleDelete(item.id)}>
+                                                        <Trash2 className="h-4 w-4" /> Delete Item
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -225,38 +314,6 @@ export default function InventoryPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            {/* Edit Dialog */}
-            <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Edit Item</DialogTitle></DialogHeader>
-                    {editingItem && (
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Name</Label><Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} className="col-span-3" /></div>
-                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Stock</Label><Input type="number" value={editingItem.stock_quantity} onChange={e => setEditingItem({ ...editingItem, stock_quantity: Number(e.target.value) })} className="col-span-3" /></div>
-                            <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right">Avg. Cost</Label><Input type="number" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} className="col-span-3" /></div>
-                        </div>
-                    )}
-                    <DialogFooter><Button onClick={handleUpdateItem}>Save Changes</Button></DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Details Dialog */}
-            <Dialog open={!!viewingItem} onOpenChange={() => setViewingItem(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Item Details</DialogTitle></DialogHeader>
-                    {viewingItem && (
-                        <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><Label className="text-xs text-muted-foreground">Name</Label><p className="font-semibold">{viewingItem.name}</p></div>
-                                <div><Label className="text-xs text-muted-foreground">SKU</Label><p className="font-mono">{viewingItem.sku}</p></div>
-                                <div><Label className="text-xs text-muted-foreground">Category</Label><p>{viewingItem.category || 'N/A'}</p></div>
-                                <div><Label className="text-xs text-muted-foreground">Stock</Label><p className="font-semibold">{viewingItem.stock_quantity} {viewingItem.uom}</p></div>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

@@ -7,20 +7,37 @@ import {
     Circle,
     Clock,
     MoreHorizontal,
-    Loader2
+    Loader2,
+    Calendar,
+    User,
+    Projector,
+    Briefcase,
+    AlertCircle,
+    Flag,
+    Filter,
+    Search,
+    Edit,
+    Trash2,
+    Layout
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -34,6 +51,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 export const runtime = 'edge';
 
@@ -41,237 +59,285 @@ interface Task {
     id: string
     title: string
     description: string
-    status: string
-    priority: string
+    status: 'To Do' | 'In Progress' | 'Review' | 'Done'
+    priority: 'Low' | 'Medium' | 'High' | 'Critical'
     due_date: string
+    project_id?: string
+    projects?: {
+        title: string
+    }
+    assignee_id?: string
+    profiles?: {
+        full_name: string
+    }
 }
 
 export default function TasksPage() {
+    const { dict, locale } = useLanguage()
     const [tasks, setTasks] = React.useState<Task[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const [searchTerm, setSearchTerm] = React.useState("")
+
     const [newTask, setNewTask] = React.useState({
         title: '',
         description: '',
-        status: 'To Do',
+        status: 'To Do' as const,
+        priority: 'Medium' as const,
         due_date: '',
         assignee_id: '',
         project_id: ''
     })
-    const [viewingTask, setViewingTask] = React.useState<Task | null>(null)
+
     const [users, setUsers] = React.useState<{ id: string; full_name?: string; email?: string }[]>([])
     const [projects, setProjects] = React.useState<{ id: string; title: string }[]>([])
 
     const supabase = createClient()
 
-    const fetchInitialData = React.useCallback(async () => {
+    const fetchData = React.useCallback(async () => {
         setLoading(true)
         const [tasksRes, usersRes, projectsRes] = await Promise.all([
-            supabase.from('tasks').select('*').order('created_at', { ascending: false }),
-            supabase.from('profiles').select('*').order('full_name'),
-            supabase.from('projects').select('*').order('title')
+            supabase.from('tasks').select(`
+                *,
+                projects:projects(title),
+                profiles:profiles(full_name)
+            `).order('created_at', { ascending: false }),
+            supabase.from('profiles').select('id, full_name, email').order('full_name'),
+            supabase.from('projects').select('id, title').order('title')
         ])
 
-        if (tasksRes.error) console.error('Error fetching tasks:', tasksRes.error)
-        else setTasks(tasksRes.data || [])
-
-        if (usersRes.error) console.error('Error fetching users:', usersRes.error)
-        else setUsers(usersRes.data || [])
-
-        if (projectsRes.error) console.error('Error fetching projects:', projectsRes.error)
-        else setProjects(projectsRes.data || [])
+        if (!tasksRes.error) setTasks(tasksRes.data || [])
+        if (!usersRes.error) setUsers(usersRes.data || [])
+        if (!projectsRes.error) setProjects(projectsRes.data || [])
 
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
-        fetchInitialData()
-    }, [fetchInitialData])
+        fetchData()
+    }, [fetchData])
 
     const handleAddTask = async () => {
         if (!newTask.title) return alert("Title is required")
-
         const { error } = await supabase.from('tasks').insert([newTask])
 
-        if (error) {
-            alert("Error adding task: " + error.message)
-        } else {
+        if (error) alert(error.message)
+        else {
             setIsAddOpen(false)
-            setNewTask({
-                title: '',
-                description: '',
-                status: 'To Do',
-                due_date: '',
-                assignee_id: '',
-                project_id: ''
-            })
-            fetchInitialData() // Changed from fetchTasks() to fetchInitialData() to refresh all data
+            setNewTask({ title: '', description: '', status: 'To Do', priority: 'Medium', due_date: '', assignee_id: '', project_id: '' })
+            fetchData()
         }
     }
 
     const toggleStatus = async (task: Task) => {
         const nextStatus = task.status === 'Done' ? 'To Do' : 'Done'
-        const { error } = await supabase
-            .from('tasks')
-            .update({ status: nextStatus })
-            .eq('id', task.id)
-
-        if (error) alert(error.message)
-        else fetchInitialData()
+        const { error } = await supabase.from('tasks').update({ status: nextStatus }).eq('id', task.id)
+        if (!error) fetchData()
     }
 
-    const deleteTask = async (id: string) => {
-        if (!confirm("Delete task?")) return
-        const { error } = await supabase.from('tasks').delete().eq('id', id)
-        if (error) alert(error.message)
-        else fetchInitialData()
+    const getPriorityBadge = (p: Task['priority']) => {
+        const colors: Record<string, string> = {
+            'Low': 'bg-slate-100 text-slate-600',
+            'Medium': 'bg-blue-100 text-blue-700',
+            'High': 'bg-orange-100 text-orange-700',
+            'Critical': 'bg-rose-100 text-rose-700 animate-pulse'
+        }
+        return <Badge className={`text-[10px] font-bold border-none shadow-sm ${colors[p] || 'bg-slate-100'}`}>{p}</Badge>
     }
+
+    const filtered = tasks.filter(t =>
+        t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.projects?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Tasks</h2>
-                    <p className="text-muted-foreground text-sm">
-                        Manage implementation steps and daily activities.
-                    </p>
+                    <h2 className="text-4xl font-black tracking-tight text-slate-900">Task Performance</h2>
+                    <p className="text-slate-500 font-medium">Coordinate deliverables, assign stakeholders, and track operational progress.</p>
                 </div>
-
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" />
-                            New Task
+                        <Button className="bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-100 border-none h-11 px-6">
+                            <Plus className="mr-2 h-4 w-4" /> New Operational Task
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-xl">
                         <DialogHeader>
-                            <DialogTitle>New Task</DialogTitle>
-                            <DialogDescription>Add a new task to the list.</DialogDescription>
+                            <DialogTitle>Define Deliverable</DialogTitle>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input
-                                    value={newTask.title}
-                                    onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                                />
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Task Title</Label>
+                                <Input value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2 col-span-2">
                                 <Label>Description</Label>
-                                <Input
-                                    value={newTask.description}
-                                    onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                                />
+                                <Input value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Project</Label>
-                                <select
-                                    className="w-full border p-2 rounded"
-                                    value={newTask.project_id}
-                                    onChange={e => setNewTask({ ...newTask, project_id: e.target.value })}
-                                >
-                                    <option value="">None</option>
-                                    {projects.map(p => (
-                                        <option key={p.id} value={p.id}>{p.title}</option>
-                                    ))}
+                                <Label>Project Association</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.project_id} onChange={e => setNewTask({ ...newTask, project_id: e.target.value })}>
+                                    <option value="">None / General</option>
+                                    {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Assign To</Label>
-                                <select
-                                    className="w-full border p-2 rounded"
-                                    value={newTask.assignee_id}
-                                    onChange={e => setNewTask({ ...newTask, assignee_id: e.target.value })}
-                                >
+                                <Label>Assign Stakeholder</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.assignee_id} onChange={e => setNewTask({ ...newTask, assignee_id: e.target.value })}>
                                     <option value="">Unassigned</option>
-                                    {users.map(u => (
-                                        <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
-                                    ))}
+                                    {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Priority</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Due Date</Label>
-                                <Input
-                                    type="date"
-                                    value={newTask.due_date}
-                                    onChange={e => setNewTask({ ...newTask, due_date: e.target.value })}
-                                />
+                                <Input type="date" value={newTask.due_date} onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} />
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleAddTask}>Add Task</Button>
+                            <Button variant="ghost" onClick={() => setIsAddOpen(false)}>{dict.common.cancel}</Button>
+                            <Button onClick={handleAddTask} className="bg-slate-900 text-white font-bold">Initialize Task</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>
 
-            {loading ? (
-                <div className="flex justify-center p-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="border-none shadow-md bg-white">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight">Total Tasks</CardPlaceholder>
+                        <CardTitle className="text-2xl font-black">{tasks.length}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-blue-50/50">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-blue-600">Pending</CardPlaceholder>
+                        <CardTitle className="text-2xl font-black text-blue-700">{tasks.filter(t => t.status !== 'Done').length}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-emerald-50/50">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-emerald-600">Finalized</CardPlaceholder>
+                        <CardTitle className="text-2xl font-black text-emerald-700">{tasks.filter(t => t.status === 'Done').length}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-rose-50/50">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-rose-600">Critical Priority</CardPlaceholder>
+                        <CardTitle className="text-2xl font-black text-rose-700">{tasks.filter(t => t.priority === 'Critical').length}</CardTitle>
+                    </CardHeader>
+                </Card>
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                    <Input
+                        placeholder="Search tasks, project titles, assignees..."
+                        className="h-14 pl-12 bg-white border-none shadow-xl text-lg rounded-2xl"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
                 </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-xl font-bold gap-2">
+                        <Layout className="h-5 w-5" /> Kanban View
+                    </Button>
+                    <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-xl font-bold gap-2">
+                        <Filter className="h-5 w-5" /> Filters
+                    </Button>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center py-20"><Loader2 className="h-10 w-10 animate-spin text-slate-300" /></div>
             ) : (
-                <div className="grid gap-4">
-                    {tasks.map((task) => (
-                        <Card key={task.id} className="hover:shadow-sm transition-shadow">
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <button onClick={() => toggleStatus(task)}>
-                                    {task.status === 'Done' ? (
-                                        <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                                    ) : (
-                                        <Circle className="h-6 w-6 text-muted-foreground" />
-                                    )}
-                                </button>
-                                <div className="flex-1 cursor-pointer" onClick={() => setViewingTask(task)}>
-                                    <h3 className={`font-semibold ${task.status === 'Done' ? 'line-through text-muted-foreground' : ''}`}>
-                                        {task.title}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground">{task.description}</p>
+                <div className="space-y-4">
+                    {filtered.map((task) => (
+                        <Card key={task.id} className="border-none shadow-sm hover:shadow-xl hover:scale-[1.005] transition-all duration-300 group overflow-hidden bg-white">
+                            <CardContent className="p-0">
+                                <div className="flex items-center p-4 gap-6">
+                                    <button
+                                        onClick={() => toggleStatus(task)}
+                                        className="h-10 w-10 rounded-full flex items-center justify-center border-2 border-slate-100 group-hover:border-primary/20 transition-all shrink-0"
+                                    >
+                                        {task.status === 'Done' ? (
+                                            <CheckCircle2 className="h-6 w-6 text-emerald-500 fill-emerald-50" />
+                                        ) : (
+                                            <Circle className="h-6 w-6 text-slate-200 group-hover:text-primary transition-colors" />
+                                        )}
+                                    </button>
+
+                                    <div className="flex-1 min-w-0 py-2">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <h3 className={`text-lg font-bold tracking-tight ${task.status === 'Done' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                                {task.title}
+                                            </h3>
+                                            {getPriorityBadge(task.priority)}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-slate-400">
+                                            {task.projects?.title && (
+                                                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-tighter">
+                                                    <Briefcase className="h-3 w-3" /> {task.projects.title}
+                                                </div>
+                                            )}
+                                            {task.profiles?.full_name && (
+                                                <div className="flex items-center gap-1.5 text-xs font-medium">
+                                                    <User className="h-3 w-3" /> Assigned to {task.profiles.full_name}
+                                                </div>
+                                            )}
+                                            {task.due_date && (
+                                                <div className="flex items-center gap-1.5 text-xs font-medium">
+                                                    <Calendar className="h-3 w-3" /> {format(new Date(task.due_date), "MMM dd, yyyy")}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 pr-2">
+                                        <div className="hidden md:block text-right">
+                                            <Badge variant="outline" className="text-[10px] font-black uppercase text-slate-400 border-slate-100">
+                                                {task.status}
+                                            </Badge>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-5 w-5" /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none">
+                                                <DropdownMenuLabel className="uppercase text-[10px] tracking-widest text-slate-400">Deliverable Control</DropdownMenuLabel>
+                                                <DropdownMenuItem className="gap-2 p-3"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
+                                                <DropdownMenuItem className="gap-2 p-3"><Flag className="h-4 w-4" /> Change Priority</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => fetchData()} className="gap-2 p-3 text-rose-600"><Trash2 className="h-4 w-4" /> Delete Task</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    {task.due_date && (
-                                        <Badge variant="outline" className="flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            {task.due_date}
-                                        </Badge>
-                                    )}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => deleteTask(task.id)} className="text-rose-600">Delete</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                                {task.priority === 'Critical' && task.status !== 'Done' && (
+                                    <div className="h-1 bg-gradient-to-r from-rose-500 to-transparent w-full" />
+                                )}
                             </CardContent>
                         </Card>
                     ))}
-                    {tasks.length === 0 && (
-                        <div className="text-center p-12 text-muted-foreground">
-                            No tasks found.
+                    {filtered.length === 0 && (
+                        <div className="text-center py-40 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                            <AlertCircle className="h-16 w-16 text-slate-200 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-slate-400 leading-relaxed">System clear. <br /> No active tasks matching your filter.</h3>
                         </div>
                     )}
                 </div>
             )}
-            {/* View Task Dialog */}
-            <Dialog open={!!viewingTask} onOpenChange={() => setViewingTask(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Task Details</DialogTitle></DialogHeader>
-                    {viewingTask && (
-                        <div className="space-y-4">
-                            <div><Label className="text-xs text-muted-foreground">Title</Label><p className="font-semibold">{viewingTask.title}</p></div>
-                            <div><Label className="text-xs text-muted-foreground">Description</Label><p>{viewingTask.description || 'No description'}</p></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div><Label className="text-xs text-muted-foreground">Status</Label><Badge variant="outline">{viewingTask.status}</Badge></div>
-                                <div><Label className="text-xs text-muted-foreground">Due Date</Label><p>{viewingTask.due_date || 'N/A'}</p></div>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }
