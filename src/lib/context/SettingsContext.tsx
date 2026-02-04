@@ -13,7 +13,7 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined)
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    const [currency, setCurrencyState] = useState<string>("SAR")
+    const [currency, setCurrencyState] = useState<string>("KWD")
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
 
