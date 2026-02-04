@@ -112,7 +112,7 @@ export default async function DashboardPage() {
                         {dict.dashboard.title}
                     </h2>
                     <p className="text-slate-500 font-medium">
-                        Welcome back, <span className="text-primary font-bold">{user?.email?.split('@')[0]}</span>. Here's what's happening today.
+                        Welcome back, <span className="text-primary font-bold">{user?.email?.split('@')[0]}</span>. Here&apos;s what&apos;s happening today.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">

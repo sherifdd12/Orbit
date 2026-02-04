@@ -16,7 +16,9 @@ import {
     ArrowRight,
     Edit,
     Trash2,
-    CheckCircle2
+    CheckCircle2,
+    Activity,
+    Search
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { format } from "date-fns"
