@@ -14,10 +14,13 @@ import {
     Filter,
     Download,
     Edit,
-    Trash2
+    Trash2,
+    BarChart3
 } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { format } from "date-fns"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -55,6 +58,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
+import { useSettings } from "@/lib/context/SettingsContext"
+
 export const runtime = 'edge';
 
 interface Employee {
@@ -80,12 +85,16 @@ interface Employee {
 
 export default function EmployeesPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [employees, setEmployees] = React.useState<Employee[]>([])
     const [departments, setDepartments] = React.useState<{ id: string, name: string, name_ar: string }[]>([])
     const [profiles, setProfiles] = React.useState<{ id: string, full_name: string }[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
     const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingEmp, setEditingEmp] = React.useState<Employee | null>(null)
+    const router = useRouter()
 
     // Form state
     const [newEmp, setNewEmp] = React.useState({
@@ -140,6 +149,52 @@ export default function EmployeesPage() {
         }
     }
 
+    const handleDeleteEmployee = async (id: string) => {
+        if (!confirm("Are you sure you want to terminate this employee record?")) return
+        const { error } = await supabase.from('employees').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleEdit = async () => {
+        if (!editingEmp) return
+        const { error } = await supabase
+            .from('employees')
+            .update({
+                position: editingEmp.position,
+                employment_status: editingEmp.employment_status,
+                salary: editingEmp.salary,
+                department_id: editingEmp.department_id || null
+            })
+            .eq('id', editingEmp.id)
+
+        if (error) alert(error.message)
+        else {
+            setIsEditOpen(false)
+            fetchData()
+        }
+    }
+
+    const handleExport = () => {
+        const headers = ["Employee Code", "Name", "Department", "Position", "Status", "Email", "Salary"]
+        const data = employees.map(e => [
+            e.employee_code,
+            e.profiles.full_name,
+            locale === 'ar' ? e.departments?.name_ar || e.departments?.name : e.departments?.name,
+            e.position,
+            e.employment_status,
+            e.profiles.email,
+            e.salary
+        ])
+        const csvContent = [headers.join(","), ...data.map(r => r.join(","))].join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `employees_${new Date().toISOString().split('T')[0]}.csv`
+        a.click()
+    }
+
     const getStatusBadge = (status: string) => {
         const variants: Record<string, string> = {
             'Full-time': 'bg-emerald-100 text-emerald-700',
@@ -164,7 +219,7 @@ export default function EmployeesPage() {
                     <p className="text-muted-foreground text-sm">Manage employee records, contracts, and profiles.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => handleActionPlaceholder('Export')}><Download className="h-4 w-4 mr-2" /> {dict.common.export}</Button>
+                    <Button variant="outline" onClick={handleExport}><Download className="h-4 w-4 mr-2" /> {dict.common.export}</Button>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
                             <Button className="shadow-lg shadow-primary/20"><Plus className="h-4 w-4 mr-2" /> {dict.common.add}</Button>
@@ -209,7 +264,7 @@ export default function EmployeesPage() {
                                     <Input type="date" value={newEmp.hire_date} onChange={e => setNewEmp({ ...newEmp, hire_date: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Monthly Salary (SAR)</Label>
+                                    <Label>Monthly Salary ({currency})</Label>
                                     <Input type="number" value={newEmp.salary} onChange={e => setNewEmp({ ...newEmp, salary: parseFloat(e.target.value) })} />
                                 </div>
                             </div>
@@ -229,7 +284,14 @@ export default function EmployeesPage() {
                             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input placeholder={dict.common.search + "..."} className="pl-9 bg-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                         </div>
-                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleActionPlaceholder('Filters')}><Filter className="h-4 w-4" /> Filters</Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleActionPlaceholder('Filters')}><Filter className="h-4 w-4" /> Filters</Button>
+                            <Link href="/reports">
+                                <Button variant="ghost" size="sm" className="gap-2">
+                                    <BarChart3 className="h-4 w-4" /> Reports
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -292,9 +354,12 @@ export default function EmployeesPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit')} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Attendance Log')} className="gap-2"><Calendar className="h-4 w-4" /> Attendance Log</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Terminate')} className="gap-2 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => {
+                                                    setEditingEmp(e)
+                                                    setIsEditOpen(true)
+                                                }} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => router.push('/hr/attendance')} className="gap-2"><Calendar className="h-4 w-4" /> Attendance Log</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteEmployee(e.id)} className="gap-2 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
@@ -304,6 +369,44 @@ export default function EmployeesPage() {
                     </Table>
                 </CardContent>
             </Card>
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Update Employee Record: {editingEmp?.profiles.full_name}</DialogTitle>
+                    </DialogHeader>
+                    {editingEmp && (
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Current Position</Label>
+                                <Input value={editingEmp.position} onChange={e => setEditingEmp({ ...editingEmp, position: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Department</Label>
+                                <select className="w-full border rounded-md p-2" value={editingEmp.department_id || ''} onChange={e => setEditingEmp({ ...editingEmp, department_id: e.target.value })}>
+                                    <option value="">None</option>
+                                    {departments.map(d => <option key={d.id} value={d.id}>{locale === 'ar' ? d.name_ar : d.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <select className="w-full border rounded-md p-2" value={editingEmp.employment_status} onChange={e => setEditingEmp({ ...editingEmp, employment_status: e.target.value })}>
+                                    <option value="Full-time">Full-time</option>
+                                    <option value="Contract">Contract</option>
+                                    <option value="Part-time">Part-time</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Monthly Salary ({currency})</Label>
+                                <Input type="number" value={editingEmp.salary} onChange={e => setEditingEmp({ ...editingEmp, salary: parseFloat(e.target.value) })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleEdit}>{dict.common.save} Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -16,8 +16,10 @@ import {
     Trash2,
     Eye,
     Barcode,
-    Box
+    Box,
+    BarChart3
 } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
@@ -78,6 +80,12 @@ export default function InventoryPage() {
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isAdjustmentOpen, setIsAdjustmentOpen] = React.useState(false)
+    const [selectedItemForAdjustment, setSelectedItemForAdjustment] = React.useState<Item | null>(null)
+    const [adjustmentQuantity, setAdjustmentQuantity] = React.useState(0)
+    const [adjustmentType, setAdjustmentType] = React.useState<'add' | 'subtract'>('add')
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingItem, setEditingItem] = React.useState<Item | null>(null)
 
     const [newItem, setNewItem] = React.useState({
         name: '',
@@ -124,6 +132,63 @@ export default function InventoryPage() {
         else fetchData()
     }
 
+    const handleEditItem = async () => {
+        if (!editingItem) return
+        const { error } = await supabase
+            .from('items')
+            .update({
+                name: editingItem.name,
+                sku: editingItem.sku,
+                category: editingItem.category,
+                uom: editingItem.uom,
+                avg_cost: editingItem.avg_cost
+            })
+            .eq('id', editingItem.id)
+
+        if (error) alert(error.message)
+        else {
+            setIsEditOpen(false)
+            setEditingItem(null)
+            fetchData()
+        }
+    }
+
+    const handleExport = () => {
+        const headers = ["Name", "SKU", "Category", "Stock", "UOM", "Avg Cost", "Total Value"]
+        const data = items.map(i => [
+            i.name, i.sku, i.category, i.stock_quantity, i.uom, i.avg_cost, i.stock_quantity * i.avg_cost
+        ])
+        const csvContent = [headers.join(","), ...data.map(r => r.join(","))].join("\n")
+        const blob = new Blob([csvContent], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `inventory_${new Date().toISOString().split('T')[0]}.csv`
+        a.click()
+    }
+
+    const handleAdjustment = async () => {
+        if (!selectedItemForAdjustment) return
+        const newTotal = adjustmentType === 'add'
+            ? selectedItemForAdjustment.stock_quantity + adjustmentQuantity
+            : selectedItemForAdjustment.stock_quantity - adjustmentQuantity
+
+        if (newTotal < 0) return alert("Stock cannot be negative")
+
+        const { error } = await supabase
+            .from('items')
+            .update({ stock_quantity: newTotal })
+            .eq('id', selectedItemForAdjustment.id)
+
+        if (error) alert(error.message)
+        else {
+            setIsAdjustmentOpen(false)
+            setSelectedItemForAdjustment(null)
+            setAdjustmentQuantity(0)
+            fetchData()
+        }
+    }
+
     const handleActionPlaceholder = (action: string) => {
         alert(`${action} feature is under development. Coming soon!`)
     }
@@ -148,7 +213,12 @@ export default function InventoryPage() {
                     <p className="text-muted-foreground text-sm">Control your stock levels, track movements, and manage item master data.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="gap-2" onClick={() => handleActionPlaceholder('Export')}><Download className="h-4 w-4" /> {dict.common.export}</Button>
+                    <Button variant="outline" className="gap-2" onClick={handleExport}><Download className="h-4 w-4" /> {dict.common.export}</Button>
+                    <Link href="/reports">
+                        <Button variant="outline" className="gap-2">
+                            <BarChart3 className="h-4 w-4" /> {dict.sidebar.reports}
+                        </Button>
+                    </Link>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
                             <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg border-none">
@@ -304,8 +374,14 @@ export default function InventoryPage() {
                                                 <DropdownMenuContent align="end" className="w-48">
                                                     <DropdownMenuLabel>Item Operations</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('View Transactions')} className="gap-2"><Eye className="h-4 w-4" /> View Transactions</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit Item')} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Stock Adjustment')} className="gap-2 text-blue-600"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        setEditingItem(item)
+                                                        setIsEditOpen(true)
+                                                    }} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        setSelectedItemForAdjustment(item)
+                                                        setIsAdjustmentOpen(true)
+                                                    }} className="gap-2 text-blue-600 font-bold"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="gap-2 text-rose-600" onClick={() => handleDelete(item.id)}>
                                                         <Trash2 className="h-4 w-4" /> Delete Item
@@ -320,6 +396,83 @@ export default function InventoryPage() {
                     </div>
                 </CardContent>
             </Card>
+            <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Inventory Correction: {selectedItemForAdjustment?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button
+                                variant={adjustmentType === 'add' ? 'default' : 'outline'}
+                                className={adjustmentType === 'add' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+                                onClick={() => setAdjustmentType('add')}
+                            >
+                                <Plus className="h-4 w-4 mr-2" /> Add Stock
+                            </Button>
+                            <Button
+                                variant={adjustmentType === 'subtract' ? 'default' : 'outline'}
+                                className={adjustmentType === 'subtract' ? 'bg-rose-600 hover:bg-rose-700' : ''}
+                                onClick={() => setAdjustmentType('subtract')}
+                            >
+                                <TrendingDown className="h-4 w-4 mr-2" /> Subtract Stock
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Quantity to adjust ({selectedItemForAdjustment?.uom})</Label>
+                            <Input
+                                type="number"
+                                value={adjustmentQuantity}
+                                onChange={e => setAdjustmentQuantity(Number(e.target.value))}
+                            />
+                        </div>
+                        <div className="p-3 bg-slate-50 rounded-lg text-sm">
+                            New Projected Stock: <span className="font-bold">
+                                {adjustmentType === 'add'
+                                    ? (selectedItemForAdjustment?.stock_quantity || 0) + adjustmentQuantity
+                                    : (selectedItemForAdjustment?.stock_quantity || 0) - adjustmentQuantity} {selectedItemForAdjustment?.uom}
+                            </span>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAdjustmentOpen(false)}>Cancel</Button>
+                        <Button onClick={handleAdjustment} className="bg-blue-600">Apply Correction</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader><DialogTitle>Edit Item Master Data</DialogTitle></DialogHeader>
+                    {editingItem && (
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Item Name</Label>
+                                <Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>SKU / Barcode</Label>
+                                <Input value={editingItem.sku} onChange={e => setEditingItem({ ...editingItem, sku: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Category</Label>
+                                <Input value={editingItem.category} onChange={e => setEditingItem({ ...editingItem, category: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Unit of Measure (UOM)</Label>
+                                <Input value={editingItem.uom} onChange={e => setEditingItem({ ...editingItem, uom: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Average Cost ({currency})</Label>
+                                <Input type="number" step="0.01" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleEditItem}>{dict.common.save} Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

@@ -12,8 +12,10 @@ import {
     Eye,
     MoreHorizontal,
     Filter,
-    ArrowDown
+    ArrowDown,
+    BarChart3
 } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { format } from "date-fns"
 
@@ -43,6 +45,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 
@@ -68,28 +80,69 @@ export default function PurchaseOrdersPage() {
     const [orders, setOrders] = React.useState<PurchaseOrder[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+    const [vendors, setVendors] = React.useState<{ id: string, name: string }[]>([])
+    const [newPO, setNewPO] = React.useState({
+        vendor_id: '',
+        order_number: `PO-${Date.now().toString().slice(-6)}`,
+        order_date: format(new Date(), "yyyy-MM-dd"),
+        expected_date: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+        status: 'Draft' as const,
+        total: 0
+    })
 
     const supabase = createClient()
 
     const fetchData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('purchase_orders')
-            .select(`
-                *,
-                vendor:vendors(name)
-            `)
-            .order('order_date', { ascending: false })
+        const [ordersRes, vendorsRes] = await Promise.all([
+            supabase.from('purchase_orders').select('*, vendor:vendors(name)').order('order_date', { ascending: false }),
+            supabase.from('vendors').select('id, name').order('name')
+        ])
 
-        if (!error) {
-            setOrders(data || [])
-        }
+        if (!ordersRes.error) setOrders(ordersRes.data || [])
+        if (!vendorsRes.error) setVendors(vendorsRes.data || [])
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const handleDeletePO = async (id: string, num: string) => {
+        if (!confirm(`Are you sure you want to cancel and delete purchase order ${num}?`)) return
+        const { error } = await supabase.from('purchase_orders').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleCreatePO = async () => {
+        if (!newPO.vendor_id) return alert("Please select a vendor")
+        const { error } = await supabase.from('purchase_orders').insert([newPO])
+        if (error) alert(error.message)
+        else {
+            setIsCreateOpen(false)
+            setNewPO({
+                vendor_id: '',
+                order_number: `PO-${Date.now().toString().slice(-6)}`,
+                order_date: format(new Date(), "yyyy-MM-dd"),
+                expected_date: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+                status: 'Draft',
+                total: 0
+            })
+            fetchData()
+        }
+    }
+
+    const handleUpdateStatus = async (id: string, newStatus: PurchaseOrder['status']) => {
+        const { error } = await supabase
+            .from('purchase_orders')
+            .update({ status: newStatus })
+            .eq('id', id)
+
+        if (error) alert(error.message)
+        else fetchData()
+    }
 
     const handleActionPlaceholder = (action: string) => {
         alert(`${action} feature is under development. Coming soon!`)
@@ -119,12 +172,60 @@ export default function PurchaseOrdersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">{dict.purchasing.orders}</h2>
                     <p className="text-muted-foreground text-sm">Create and track purchase orders with vendors.</p>
                 </div>
-                <Button
-                    onClick={() => handleActionPlaceholder('Create Purchase Order')}
-                    className="shadow-lg shadow-orange-200 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-none px-6"
-                >
-                    <Plus className="mr-2 h-4 w-4" /> Create Purchase Order
-                </Button>
+                <div className="flex gap-2">
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="shadow-lg shadow-orange-200 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 border-none px-6">
+                                <Plus className="mr-2 h-4 w-4" /> Create Purchase Order
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Initialize New Purchase Order</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Select Vendor</Label>
+                                    <Select onValueChange={(val) => setNewPO({ ...newPO, vendor_id: val })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Choose a supplier..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {vendors.map(v => (
+                                                <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>PO Number</Label>
+                                    <Input value={newPO.order_number} readOnly className="bg-slate-50 font-mono" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Order Date</Label>
+                                    <Input type="date" value={newPO.order_date} onChange={e => setNewPO({ ...newPO, order_date: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Expected Delivery</Label>
+                                    <Input type="date" value={newPO.expected_date} onChange={e => setNewPO({ ...newPO, expected_date: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Commitment Total ({currency})</Label>
+                                    <Input type="number" value={newPO.total} onChange={e => setNewPO({ ...newPO, total: parseFloat(e.target.value) })} />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                                <Button onClick={handleCreatePO} className="bg-orange-600 hover:bg-orange-700 text-white">Create PO Record</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <Link href="/reports">
+                        <Button variant="outline" className="gap-2">
+                            <BarChart3 className="h-4 w-4" /> {dict.sidebar.reports}
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -217,10 +318,10 @@ export default function PurchaseOrdersPage() {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>PO Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('View Details')} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Receive Goods')} className="gap-2 text-emerald-600 font-bold"><CheckCircle2 className="h-4 w-4" /> Receive Goods</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Create Bill')} className="gap-2 text-blue-600 font-bold"><ShoppingBag className="h-4 w-4" /> Create Bill</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Received')} className="gap-2 text-emerald-600 font-bold"><CheckCircle2 className="h-4 w-4" /> Receive Goods</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Billed')} className="gap-2 text-blue-600 font-bold"><ShoppingBag className="h-4 w-4" /> Create Bill</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Cancel PO')} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel PO</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDeletePO(order.id, order.order_number)} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel & Delete PO</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -231,6 +332,6 @@ export default function PurchaseOrdersPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

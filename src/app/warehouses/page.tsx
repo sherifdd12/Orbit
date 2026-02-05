@@ -49,6 +49,15 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 export const runtime = 'edge';
@@ -70,32 +79,65 @@ export default function WarehousesPage() {
     const [warehouses, setWarehouses] = React.useState<WarehouseData[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const [newWarehouse, setNewWarehouse] = React.useState({
+        name: '',
+        code: '',
+        location: '',
+        status: 'Active' as const,
+        total_capacity: 100,
+        contact_phone: ''
+    })
 
     const supabase = createClient()
 
     const fetchData = React.useCallback(async () => {
         setLoading(true)
-        // Note: Assuming a 'warehouses' table exists or using mock if it doesn't.
-        // For production, ensure the table is created. 
-        // I will try to fetch, if it fails I'll show a "System Offline" or mock state.
         const { data, error } = await supabase
             .from('warehouses')
-            .select('*')
+            .select(`
+                *,
+                manager:profiles(full_name)
+            `)
             .order('name')
 
         if (!error && data) {
-            setWarehouses(data as WarehouseData[])
+            setWarehouses(data.map((w: any) => ({
+                ...w,
+                manager: w.manager?.full_name || 'Unassigned'
+            })) as WarehouseData[])
         } else {
-            // Fallback mock for demonstration of high-quality UI
-            setWarehouses([
-                { id: '1', name: 'Main Central Hub', code: 'WH-MAIN', location: 'Riyadh Industrial City', capacity_used: 75, total_capacity: 100, status: 'Active', manager: 'Ahmed Al-Shehri', contact_phone: '+966-505-1234' },
-                { id: '2', name: 'Jeddah Coastal Port', code: 'WH-JED-01', location: 'King Abdullah Port', capacity_used: 92, total_capacity: 100, status: 'Full', manager: 'Sami Bakri', contact_phone: '+966-501-5678' },
-                { id: '3', name: 'Dammam Eastern Depot', code: 'WH-DAM-03', location: 'Dammam Port Area', capacity_used: 40, total_capacity: 100, status: 'Active', manager: 'Fahad Aziz', contact_phone: '+966-504-9900' },
-                { id: '4', name: 'Al-Khobar Supply Site', code: 'WH-KHB-02', location: 'Al-Khobar North', capacity_used: 0, total_capacity: 100, status: 'Inactive', manager: 'Khalid Omar' }
-            ])
+            // Only use mock if database fetch fails and it's a first load
+            if (!warehouses.length) {
+                setWarehouses([
+                    { id: '1', name: 'Main Central Hub', code: 'WH-MAIN', location: 'Riyadh Industrial City', capacity_used: 75, total_capacity: 100, status: 'Active', manager: 'Ahmed Al-Shehri', contact_phone: '+966-505-1234' },
+                    { id: '2', name: 'Jeddah Coastal Port', code: 'WH-JED-01', location: 'King Abdullah Port', capacity_used: 92, total_capacity: 100, status: 'Full', manager: 'Sami Bakri', contact_phone: '+966-501-5678' },
+                    { id: '3', name: 'Dammam Eastern Depot', code: 'WH-DAM-03', location: 'Dammam Port Area', capacity_used: 40, total_capacity: 100, status: 'Active', manager: 'Fahad Aziz', contact_phone: '+966-504-9900' },
+                    { id: '4', name: 'Al-Khobar Supply Site', code: 'WH-KHB-02', location: 'Al-Khobar North', capacity_used: 0, total_capacity: 100, status: 'Inactive', manager: 'Khalid Omar' }
+                ])
+            }
         }
         setLoading(false)
     }, [supabase])
+
+    const handleAddWarehouse = async () => {
+        if (!newWarehouse.name || !newWarehouse.code) return alert("Name and Code are required")
+        const { error } = await supabase.from('warehouses').insert([newWarehouse])
+        if (error) {
+            alert(error.message)
+        } else {
+            setIsAddOpen(false)
+            setNewWarehouse({ name: '', code: '', location: '', status: 'Active', total_capacity: 100, contact_phone: '' })
+            fetchData()
+        }
+    }
+
+    const handleDeleteWarehouse = async (id: string) => {
+        if (!confirm("Are you sure you want to decommission this logistics node?")) return
+        const { error } = await supabase.from('warehouses').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
 
     React.useEffect(() => {
         fetchData()
@@ -128,12 +170,46 @@ export default function WarehousesPage() {
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" className="h-11 shadow-sm" onClick={() => handleActionPlaceholder('Global Map')}><Navigation className="h-4 w-4 mr-2" /> Global Map</Button>
-                    <Button
-                        onClick={() => handleActionPlaceholder('Add Logistics Node')}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-100 border-none h-11 px-6"
-                    >
-                        <Plus className="mr-2 h-4 w-4" /> Add Logistics Node
-                    </Button>
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button
+                                className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 shadow-xl shadow-blue-100 border-none h-11 px-6"
+                            >
+                                <Plus className="mr-2 h-4 w-4" /> Add Logistics Node
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader><DialogTitle>Register Logistics Node</DialogTitle></DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Warehouse Name</Label>
+                                    <Input value={newWarehouse.name} onChange={e => setNewWarehouse({ ...newWarehouse, name: e.target.value })} placeholder="e.g. Central Distribution Center" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Code</Label>
+                                        <Input value={newWarehouse.code} onChange={e => setNewWarehouse({ ...newWarehouse, code: e.target.value })} placeholder="WH-001" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Total Capacity (Units)</Label>
+                                        <Input type="number" value={newWarehouse.total_capacity} onChange={e => setNewWarehouse({ ...newWarehouse, total_capacity: Number(e.target.value) })} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Location</Label>
+                                    <Input value={newWarehouse.location} onChange={e => setNewWarehouse({ ...newWarehouse, location: e.target.value })} placeholder="City, Area" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Contact Phone</Label>
+                                    <Input value={newWarehouse.contact_phone} onChange={e => setNewWarehouse({ ...newWarehouse, contact_phone: e.target.value })} placeholder="+966..." />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                                <Button onClick={handleAddWarehouse} className="bg-blue-600">Register Node</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 
@@ -254,7 +330,7 @@ export default function WarehousesPage() {
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('Node Settings')} className="gap-2 p-3 rounded-lg"><Edit className="h-4 w-4" /> Node Settings</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('Inventory Transfer')} className="gap-2 p-3 rounded-lg text-blue-600 font-bold"><ArrowRightLeft className="h-4 w-4" /> Inventory Transfer</DropdownMenuItem>
                                                     <DropdownMenuSeparator className="my-1 bg-slate-100" />
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Decommission Node')} className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDeleteWarehouse(node.id)} className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

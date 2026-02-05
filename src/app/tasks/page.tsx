@@ -78,6 +78,8 @@ export default function TasksPage() {
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingTask, setEditingTask] = React.useState<Task | null>(null)
 
     const [newTask, setNewTask] = React.useState({
         title: '',
@@ -142,6 +144,43 @@ export default function TasksPage() {
         const { error } = await supabase.from('tasks').delete().eq('id', id)
         if (error) alert(error.message)
         else fetchData()
+    }
+
+    const handleChangePriority = async (task: Task) => {
+        const priorities: Task['priority'][] = ['Low', 'Medium', 'High', 'Critical']
+        const currentIndex = priorities.indexOf(task.priority)
+        const nextPriority = priorities[(currentIndex + 1) % priorities.length]
+
+        const { error } = await supabase
+            .from('tasks')
+            .update({ priority: nextPriority })
+            .eq('id', task.id)
+
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleEditTask = async () => {
+        if (!editingTask) return
+        const { error } = await supabase
+            .from('tasks')
+            .update({
+                title: editingTask.title,
+                description: editingTask.description,
+                status: editingTask.status,
+                priority: editingTask.priority,
+                due_date: editingTask.due_date,
+                project_id: editingTask.project_id === '' ? null : editingTask.project_id,
+                assignee_id: editingTask.assignee_id === '' ? null : editingTask.assignee_id
+            })
+            .eq('id', editingTask.id)
+
+        if (error) alert(error.message)
+        else {
+            setIsEditOpen(false)
+            setEditingTask(null)
+            fetchData()
+        }
     }
 
     const handleActionPlaceholder = (action: string) => {
@@ -335,8 +374,11 @@ export default function TasksPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none">
                                                 <DropdownMenuLabel className="uppercase text-[10px] tracking-widest text-slate-400">Deliverable Control</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit')} className="gap-2 p-3"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleActionPlaceholder('Priority')} className="gap-2 p-3"><Flag className="h-4 w-4" /> Change Priority</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => {
+                                                    setEditingTask(task)
+                                                    setIsEditOpen(true)
+                                                }} className="gap-2 p-3"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleChangePriority(task)} className="gap-2 p-3"><Flag className="h-4 w-4" /> Change Priority</DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => handleDeleteTask(task.id, task.title)} className="gap-2 p-3 text-rose-600"><Trash2 className="h-4 w-4" /> Delete Task</DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -357,6 +399,54 @@ export default function TasksPage() {
                     )}
                 </div>
             )}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader><DialogTitle>Edit Deliverable</DialogTitle></DialogHeader>
+                    {editingTask && (
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Task Title</Label>
+                                <Input value={editingTask.title} onChange={e => setEditingTask({ ...editingTask, title: e.target.value })} />
+                            </div>
+                            <div className="space-y-2 col-span-2">
+                                <Label>Description</Label>
+                                <Input value={editingTask.description} onChange={e => setEditingTask({ ...editingTask, description: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Project Association</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.project_id || ''} onChange={e => setEditingTask({ ...editingTask, project_id: e.target.value })}>
+                                    <option value="">None / General</option>
+                                    {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Assign Stakeholder</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.assignee_id || ''} onChange={e => setEditingTask({ ...editingTask, assignee_id: e.target.value })}>
+                                    <option value="">Unassigned</option>
+                                    {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Priority</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.priority} onChange={e => setEditingTask({ ...editingTask, priority: e.target.value as any })}>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Due Date</Label>
+                                <Input type="date" value={editingTask.due_date} onChange={e => setEditingTask({ ...editingTask, due_date: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleEditTask} className="bg-slate-900 text-white font-bold">Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

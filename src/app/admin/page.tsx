@@ -120,6 +120,10 @@ export default function AdminPage() {
     const [isNewRoleOpen, setIsNewRoleOpen] = React.useState(false)
     const [newRole, setNewRole] = React.useState({ name: '', description: '' })
 
+    const [isPermsDialogOpen, setIsPermsDialogOpen] = React.useState(false)
+    const [selectedRoleForPerms, setSelectedRoleForPerms] = React.useState<Role | null>(null)
+    const [selectedPermIds, setSelectedPermIds] = React.useState<string[]>([])
+
     const supabase = createClient()
 
     const fetchData = React.useCallback(async () => {
@@ -163,6 +167,57 @@ export default function AdminPage() {
             [key]: !notifications[key]
         }
         await updateSettings({ notifications: newNotifications })
+    }
+
+    const handleOpenPermsDialog = async (role: Role) => {
+        setSelectedRoleForPerms(role)
+        setIsPermsDialogOpen(true)
+
+        const { data, error } = await supabase
+            .from('role_permissions')
+            .select('permission_id')
+            .eq('role_id', role.id)
+
+        if (!error && data) {
+            setSelectedPermIds(data.map(item => item.permission_id))
+        } else {
+            setSelectedPermIds([])
+        }
+    }
+
+    const handleTogglePermission = (permId: string) => {
+        setSelectedPermIds(prev =>
+            prev.includes(permId)
+                ? prev.filter(id => id !== permId)
+                : [...prev, permId]
+        )
+    }
+
+    const handleSaveRolePermissions = async () => {
+        if (!selectedRoleForPerms) return
+
+        try {
+            // First clear existing
+            await supabase
+                .from('role_permissions')
+                .delete()
+                .eq('role_id', selectedRoleForPerms.id)
+
+            // Then insert new ones
+            if (selectedPermIds.length > 0) {
+                const inserts = selectedPermIds.map(permId => ({
+                    role_id: selectedRoleForPerms.id,
+                    permission_id: permId
+                }))
+                await supabase.from('role_permissions').insert(inserts)
+            }
+
+            alert("Permissions updated successfully!")
+            setIsPermsDialogOpen(false)
+        } catch (err) {
+            console.error(err)
+            alert("Failed to update permissions.")
+        }
     }
     const handleAssignRole = async () => {
         if (!selectedUser || !selectedRoleId) return
@@ -395,7 +450,7 @@ export default function AdminPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 className="w-full"
-                                                onClick={() => handleActionPlaceholder(`Edit Permissions for ${role.name}`)}
+                                                onClick={() => handleOpenPermsDialog(role)}
                                             >
                                                 {dict.admin.editPermissions}
                                             </Button>
@@ -570,6 +625,46 @@ export default function AdminPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>{dict.common.cancel}</Button>
                         <Button onClick={handleAssignRole}>{dict.common.save}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Role Permissions Dialog */}
+            <Dialog open={isPermsDialogOpen} onOpenChange={setIsPermsDialogOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Management: {selectedRoleForPerms?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6">
+                        {Object.entries(permissionsByModule).map(([module, perms]) => (
+                            <div key={module} className="space-y-3">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400 border-b pb-1">{module}</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {perms.map(perm => {
+                                        const isChecked = selectedPermIds.includes(perm.id)
+                                        return (
+                                            <div
+                                                key={perm.id}
+                                                onClick={() => handleTogglePermission(perm.id)}
+                                                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isChecked
+                                                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                                        : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
+                                                    }`}
+                                            >
+                                                <div className={`h-5 w-5 rounded flex items-center justify-center border transition-all ${isChecked ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'
+                                                    }`}>
+                                                    {isChecked && <Check className="h-3 w-3 text-white" />}
+                                                </div>
+                                                <span className="text-sm font-bold">{perm.name}</span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <DialogFooter className="bg-slate-50 p-4 -mx-6 -mb-6 mt-4">
+                        <Button variant="outline" onClick={() => setIsPermsDialogOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleSaveRolePermissions} className="bg-blue-600 hover:bg-blue-700">{dict.common.save} Changes</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

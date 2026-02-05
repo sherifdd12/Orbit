@@ -12,8 +12,10 @@ import {
     Eye,
     MoreHorizontal,
     Filter,
-    ArrowRight
+    ArrowRight,
+    BarChart3
 } from "lucide-react"
+import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { format } from "date-fns"
 
@@ -43,6 +45,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 
@@ -69,28 +81,67 @@ export default function SalesOrdersPage() {
     const [orders, setOrders] = React.useState<SalesOrder[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+    const [customers, setCustomers] = React.useState<{ id: string, name: string }[]>([])
+    const [newOrder, setNewOrder] = React.useState({
+        customer_id: '',
+        order_number: `SO-${Date.now().toString().slice(-6)}`,
+        order_date: format(new Date(), "yyyy-MM-dd"),
+        status: 'Quotation' as const,
+        total: 0
+    })
 
     const supabase = createClient()
 
     const fetchData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('sale_orders')
-            .select(`
-                *,
-                customer:customers(name)
-            `)
-            .order('order_date', { ascending: false })
+        const [ordersRes, customersRes] = await Promise.all([
+            supabase.from('sale_orders').select('*, customer:customers(name)').order('order_date', { ascending: false }),
+            supabase.from('customers').select('id, name').order('name')
+        ])
 
-        if (!error) {
-            setOrders(data || [])
-        }
+        if (!ordersRes.error) setOrders(ordersRes.data || [])
+        if (!customersRes.error) setCustomers(customersRes.data || [])
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const handleDeleteOrder = async (id: string, num: string) => {
+        if (!confirm(`Are you sure you want to cancel and delete order ${num}?`)) return
+        const { error } = await supabase.from('sale_orders').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleCreateOrder = async () => {
+        if (!newOrder.customer_id) return alert("Please select a customer")
+        const { error } = await supabase.from('sale_orders').insert([newOrder])
+        if (error) alert(error.message)
+        else {
+            setIsCreateOpen(false)
+            setNewOrder({
+                customer_id: '',
+                order_number: `SO-${Date.now().toString().slice(-6)}`,
+                order_date: format(new Date(), "yyyy-MM-dd"),
+                status: 'Quotation',
+                total: 0
+            })
+            fetchData()
+        }
+    }
+
+    const handleUpdateStatus = async (id: string, newStatus: SalesOrder['status']) => {
+        const { error } = await supabase
+            .from('sale_orders')
+            .update({ status: newStatus })
+            .eq('id', id)
+
+        if (error) alert(error.message)
+        else fetchData()
+    }
 
     const handleActionPlaceholder = (action: string) => {
         alert(`${action} feature is under development. Coming soon!`)
@@ -119,12 +170,56 @@ export default function SalesOrdersPage() {
                     <h2 className="text-3xl font-bold tracking-tight">{dict.sales.orders}</h2>
                     <p className="text-muted-foreground text-sm">Manage quotations, sales orders, and deliveries.</p>
                 </div>
-                <Button
-                    onClick={() => handleActionPlaceholder('Create Order')}
-                    className="shadow-lg shadow-primary/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none"
-                >
-                    <Plus className="mr-2 h-4 w-4" /> Create Order
-                </Button>
+                <div className="flex gap-2">
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="shadow-lg shadow-primary/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 border-none">
+                                <Plus className="mr-2 h-4 w-4" /> Create Order
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Initialize New Sales Order</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Select Customer</Label>
+                                    <Select onValueChange={(val) => setNewOrder({ ...newOrder, customer_id: val })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Choose a client..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {customers.map(c => (
+                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Order Number</Label>
+                                    <Input value={newOrder.order_number} readOnly className="bg-slate-50" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date</Label>
+                                    <Input type="date" value={newOrder.order_date} onChange={e => setNewOrder({ ...newOrder, order_date: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Estimated Value ({currency})</Label>
+                                    <Input type="number" value={newOrder.total} onChange={e => setNewOrder({ ...newOrder, total: parseFloat(e.target.value) })} />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                                <Button onClick={handleCreateOrder} className="bg-indigo-600 hover:bg-indigo-700">Submit Quotation</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    <Link href="/reports">
+                        <Button variant="outline" className="gap-2">
+                            <BarChart3 className="h-4 w-4" /> {dict.sidebar.reports}
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -210,10 +305,10 @@ export default function SalesOrdersPage() {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Order Management</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('View Details')} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Confirm Order')} className="gap-2 text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Confirm Order</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Ship / Deliver')} className="gap-2 text-blue-600"><Truck className="h-4 w-4" /> Ship / Deliver</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Confirmed')} className="gap-2 text-emerald-600"><CheckCircle2 className="h-4 w-4" /> Confirm Order</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleUpdateStatus(order.id, 'Delivered')} className="gap-2 text-blue-600"><Truck className="h-4 w-4" /> Ship / Deliver</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Cancel Order')} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDeleteOrder(order.id, order.order_number)} className="gap-2 text-rose-600"><XCircle className="h-4 w-4" /> Cancel & Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -224,6 +319,6 @@ export default function SalesOrdersPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }
