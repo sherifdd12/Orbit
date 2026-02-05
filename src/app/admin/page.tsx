@@ -388,6 +388,7 @@ export default function AdminPage() {
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value)}
                                     >
+                                        <option value="KWD">KWD - Kuwaiti Dinar</option>
                                         <option value="SAR">SAR - Saudi Riyal</option>
                                         <option value="USD">USD - US Dollar</option>
                                         <option value="EUR">EUR - Euro</option>
