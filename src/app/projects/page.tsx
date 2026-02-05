@@ -225,7 +225,7 @@ export default function ProjectsPage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Project Budget (SAR)</Label>
+                                    <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Project Budget ({currency})</Label>
                                     <Input type="number" value={newProject.budget} onChange={e => setNewProject({ ...newProject, budget: Number(e.target.value) })} className="h-11" />
                                 </div>
                                 <div className="space-y-2">

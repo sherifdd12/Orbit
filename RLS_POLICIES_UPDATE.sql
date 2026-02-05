@@ -6,17 +6,10 @@
 -- ============================================================
 
 -- Ensure core metadata tables exist first
-CREATE TABLE IF NOT EXISTS public.company_settings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_name TEXT NOT NULL DEFAULT 'Orbit ERP',
-    currency TEXT DEFAULT 'USD',
-    logo_url TEXT,
-    timezone TEXT DEFAULT 'UTC',
-    address TEXT,
-    email TEXT,
-    phone TEXT,
-    website TEXT,
-    tax_number TEXT,
+-- system_settings is already defined in SYSTEM_SETTINGS_MIGRATION.sql, but we ensure it's here too for RLS
+CREATE TABLE IF NOT EXISTS public.system_settings (
+    key TEXT PRIMARY KEY,
+    value JSONB,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -42,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.role_permissions (
 );
 
 -- Enable RLS
-ALTER TABLE public.company_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
@@ -344,15 +337,15 @@ CREATE POLICY "invoices_delete_policy" ON invoices
     FOR DELETE TO authenticated USING (is_admin());
 
 -- ============================================================
--- COMPANY_SETTINGS TABLE POLICIES (Admin Only)
+-- SYSTEM_SETTINGS TABLE POLICIES (Admin Only)
 -- ============================================================
-DROP POLICY IF EXISTS "company_settings_select_policy" ON company_settings;
-DROP POLICY IF EXISTS "company_settings_update_policy" ON company_settings;
+DROP POLICY IF EXISTS "system_settings_select_policy" ON system_settings;
+DROP POLICY IF EXISTS "system_settings_update_policy" ON system_settings;
 
-CREATE POLICY "company_settings_select_policy" ON company_settings
+CREATE POLICY "system_settings_select_policy" ON system_settings
     FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "company_settings_update_policy" ON company_settings
+CREATE POLICY "system_settings_update_policy" ON system_settings
     FOR UPDATE TO authenticated
     USING (is_admin())
     WITH CHECK (is_admin());

@@ -47,6 +47,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -66,6 +67,7 @@ interface Bill {
 
 export default function VendorBillsPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [bills, setBills] = React.useState<Bill[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -128,21 +130,21 @@ export default function VendorBillsPage() {
                     <div className="absolute top-0 right-0 p-3 opacity-10"><FileText className="h-12 w-12" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider">Estimated Payables</CardDescription>
-                        <CardTitle className="text-2xl">{bills.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl">{bills.reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-emerald-50 relative">
                     <div className="absolute top-0 right-0 p-3 opacity-20"><CheckCircle2 className="h-12 w-12 text-emerald-600" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider text-emerald-600">Settled</CardDescription>
-                        <CardTitle className="text-2xl text-emerald-700">{bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl text-emerald-700">{bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-orange-50 relative">
                     <div className="absolute top-0 right-0 p-3 opacity-20"><AlertCircle className="h-12 w-12 text-orange-600" /></div>
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase tracking-wider text-orange-600">Waiting Payment</CardDescription>
-                        <CardTitle className="text-2xl text-orange-700">{bills.filter(b => b.status === 'Posted' || b.status === 'Overdue').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl text-orange-700">{bills.filter(b => b.status === 'Posted' || b.status === 'Overdue').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-sm overflow-hidden bg-rose-50 relative">
@@ -199,7 +201,7 @@ export default function VendorBillsPage() {
                                         </TableCell>
                                         <TableCell className="font-medium">{bill.vendor?.name}</TableCell>
                                         <TableCell className="text-right font-mono font-bold text-slate-800">
-                                            {bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} SAR
+                                            {bill.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
                                         </TableCell>
                                         <TableCell>{getStatusBadge(bill.status)}</TableCell>
                                         <TableCell>

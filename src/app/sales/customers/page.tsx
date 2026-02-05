@@ -54,6 +54,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -73,6 +74,7 @@ interface Customer {
 
 export default function CustomersPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [customers, setCustomers] = React.useState<Customer[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -172,7 +174,7 @@ export default function CustomersPage() {
                                 <Input value={newCust.address} onChange={e => setNewCust({ ...newCust, address: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Credit Limit (SAR)</Label>
+                                <Label>Credit Limit ({currency})</Label>
                                 <Input type="number" value={newCust.credit_limit} onChange={e => setNewCust({ ...newCust, credit_limit: parseFloat(e.target.value) })} />
                             </div>
                             <div className="space-y-2">
@@ -204,7 +206,7 @@ export default function CustomersPage() {
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-rose-600">Total Receivables</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-rose-700">{customers.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-rose-700">{customers.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
             </div>

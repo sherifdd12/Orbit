@@ -44,6 +44,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -61,6 +62,7 @@ interface JournalEntry {
 
 export default function JournalEntriesPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [entries, setEntries] = React.useState<JournalEntry[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -173,7 +175,7 @@ export default function JournalEntriesPage() {
                                         {e.reference || '-'}
                                     </TableCell>
                                     <TableCell className="text-right font-mono font-bold text-slate-700">
-                                        {new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US', { style: 'currency', currency: 'SAR' }).format(e.total_amount || 0)}
+                                        {new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US', { style: 'currency', currency: currency }).format(e.total_amount || 0)}
                                     </TableCell>
                                     <TableCell>{getStatusBadge(e.status)}</TableCell>
                                     <TableCell className="text-right pr-6">

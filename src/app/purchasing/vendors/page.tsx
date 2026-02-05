@@ -56,6 +56,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -76,6 +77,7 @@ interface Vendor {
 
 export default function VendorsPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [vendors, setVendors] = React.useState<Vendor[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -208,7 +210,7 @@ export default function VendorsPage() {
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-orange-600">Total Payables</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-orange-700">{vendors.reduce((sum, v) => sum + (v.balance || 0), 0).toLocaleString()} SAR</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-orange-700">{vendors.reduce((sum, v) => sum + (v.balance || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>
             </div>
@@ -275,7 +277,7 @@ export default function VendorsPage() {
                                             <span className="text-xs font-mono text-slate-500 uppercase">{vendor.tax_number || 'No Tax ID'}</span>
                                         </TableCell>
                                         <TableCell className="text-right font-mono font-bold text-orange-600">
-                                            {vendor.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {vendor.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
                                             <div className="text-[9px] text-muted-foreground uppercase opacity-50 tracking-tighter">
                                                 Terms: Net {vendor.payment_terms}
                                             </div>

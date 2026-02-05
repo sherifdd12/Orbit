@@ -33,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export const runtime = 'edge';
 
@@ -49,6 +50,7 @@ interface LedgerEntry {
 
 export default function GeneralLedgerPage() {
     const { dict, locale } = useLanguage()
+    const { currency } = useSettings()
     const [accounts, setAccounts] = React.useState<{ id: string, name: string, code: string, name_ar: string, type: string }[]>([])
     const [entries, setEntries] = React.useState<LedgerEntry[]>([])
     const [loading, setLoading] = React.useState(false)
@@ -175,7 +177,7 @@ export default function GeneralLedgerPage() {
                                 <CardTitle className="text-xs font-bold uppercase text-emerald-600 flex items-center gap-2">
                                     <ArrowUpRight className="h-4 w-4" /> Total Debit
                                 </CardTitle>
-                                <div className="text-2xl font-bold text-emerald-700">{totalDebit.toLocaleString()} SAR</div>
+                                <div className="text-2xl font-bold text-emerald-700">{totalDebit.toLocaleString()} {currency}</div>
                             </CardHeader>
                         </Card>
                         <Card className="bg-rose-50/50 border-rose-100">
@@ -183,7 +185,7 @@ export default function GeneralLedgerPage() {
                                 <CardTitle className="text-xs font-bold uppercase text-rose-600 flex items-center gap-2">
                                     <ArrowDownLeft className="h-4 w-4" /> Total Credit
                                 </CardTitle>
-                                <div className="text-2xl font-bold text-rose-700">{totalCredit.toLocaleString()} SAR</div>
+                                <div className="text-2xl font-bold text-rose-700">{totalCredit.toLocaleString()} {currency}</div>
                             </CardHeader>
                         </Card>
                         <Card className="bg-blue-50/50 border-blue-100">
@@ -191,7 +193,7 @@ export default function GeneralLedgerPage() {
                                 <CardTitle className="text-xs font-bold uppercase text-blue-600 flex items-center gap-2">
                                     <Wallet className="h-4 w-4" /> Net Balance
                                 </CardTitle>
-                                <div className="text-2xl font-bold text-blue-700">{(totalDebit - totalCredit).toLocaleString()} SAR</div>
+                                <div className="text-2xl font-bold text-blue-700">{(totalDebit - totalCredit).toLocaleString()} {currency}</div>
                             </CardHeader>
                         </Card>
                     </div>

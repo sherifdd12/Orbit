@@ -316,14 +316,42 @@ export default function AdminPage() {
                                     <CardTitle>{dict.admin.userManagement}</CardTitle>
                                     <CardDescription>View and manage user accounts and their roles.</CardDescription>
                                 </div>
-                                <div className="relative w-full md:w-72">
-                                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder={dict.common.search + "..."}
-                                        className="pl-9"
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                    />
+                                <div className="flex gap-2 items-center">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="gap-2 border-dashed border-2 hover:bg-slate-50 transition-colors">
+                                                <UserPlus className="h-4 w-4" /> Invite via Link
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>Invite New Teammate</DialogTitle>
+                                                <CardDescription>To add a new user to Orbit ERP, you can either:</CardDescription>
+                                            </DialogHeader>
+                                            <div className="space-y-4 py-4">
+                                                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                                                    <h4 className="font-bold text-blue-900 text-sm mb-1">Method 1: Direct Signup</h4>
+                                                    <p className="text-xs text-blue-700">Tell the user to go to the login page and click <strong>"Create local account"</strong>. Once they sign up, they will appear in this list for role assignment.</p>
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <h4 className="font-bold text-slate-900 text-sm mb-1">Method 2: Supabase Dashboard</h4>
+                                                    <p className="text-xs text-slate-700">Go to your Supabase project &gt; Authentication &gt; Users &gt; <strong>Add User</strong>. They will be automatically synced to Orbit.</p>
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button size="sm" onClick={() => window.open('/login', '_blank')}>Go to Signup Page</Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                    <div className="relative w-full md:w-72">
+                                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder={dict.common.search + "..."}
+                                            className="pl-9"
+                                            value={searchTerm}
+                                            onChange={e => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </CardHeader>
@@ -646,8 +674,8 @@ export default function AdminPage() {
                                                 key={perm.id}
                                                 onClick={() => handleTogglePermission(perm.id)}
                                                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isChecked
-                                                        ? 'bg-blue-50 border-blue-200 text-blue-700'
-                                                        : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
+                                                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                                    : 'bg-white border-slate-100 text-slate-600 hover:border-slate-300'
                                                     }`}
                                             >
                                                 <div className={`h-5 w-5 rounded flex items-center justify-center border transition-all ${isChecked ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'

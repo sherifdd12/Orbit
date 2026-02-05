@@ -63,7 +63,7 @@ export default async function DashboardPage() {
     const purchaseOrders = results[5].status === 'fulfilled' ? (results[5].value as any).data : [];
     const recentActivities = results[6].status === 'fulfilled' ? (results[6].value as any).data : [];
     const baseCurrencyRes = results[7].status === 'fulfilled' ? (results[7].value as any).data : null;
-    const currency = baseCurrencyRes?.value || "SAR";
+    const currency = baseCurrencyRes?.value || "KWD";
 
     const totalSales = (salesOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
     const totalPurchases = (purchaseOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);

@@ -51,6 +51,8 @@ import {
 } from "@/components/ui/table"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
+import { useSettings } from "@/lib/context/SettingsContext"
+
 export const runtime = 'edge';
 
 interface Account {
@@ -66,6 +68,7 @@ interface Account {
 
 export default function ChartOfAccountsPage() {
     const { dict, locale } = useLanguage()
+    const { currency, formatMoney } = useSettings()
     const [accounts, setAccounts] = React.useState<Account[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -84,15 +87,15 @@ export default function ChartOfAccountsPage() {
         } else {
             // Mock data for premium UI display if table is empty or missing
             setAccounts([
-                { id: '1', code: '1010', name: 'Cash at Bank - SAB', type: 'Asset', category: 'Current Asset', balance: 450000.00, currency: 'SAR', status: 'Active' },
-                { id: '2', code: '1200', name: 'Accounts Receivable', type: 'Asset', category: 'Current Asset', balance: 125000.50, currency: 'SAR', status: 'Active' },
-                { id: '3', code: '2000', name: 'Accounts Payable', type: 'Liability', category: 'Current Liability', balance: 85000.00, currency: 'SAR', status: 'Active' },
-                { id: '4', code: '4000', name: 'Sales Revenue', type: 'Revenue', category: 'Operating Income', balance: 1200000.00, currency: 'SAR', status: 'Active' },
-                { id: '5', code: '5000', name: 'Cost of Goods Sold', type: 'Expense', category: 'Direct Cost', balance: 750000.00, currency: 'SAR', status: 'Active' },
+                { id: '1', code: '1010', name: 'Cash at Bank', type: 'Asset', category: 'Current Asset', balance: 450000.00, currency: currency, status: 'Active' },
+                { id: '2', code: '1200', name: 'Accounts Receivable', type: 'Asset', category: 'Current Asset', balance: 125000.50, currency: currency, status: 'Active' },
+                { id: '3', code: '2000', name: 'Accounts Payable', type: 'Liability', category: 'Current Liability', balance: 85000.00, currency: currency, status: 'Active' },
+                { id: '4', code: '4000', name: 'Sales Revenue', type: 'Revenue', category: 'Operating Income', balance: 1200000.00, currency: currency, status: 'Active' },
+                { id: '5', code: '5000', name: 'Cost of Goods Sold', type: 'Expense', category: 'Direct Cost', balance: 750000.00, currency: currency, status: 'Active' },
             ])
         }
         setLoading(false)
-    }, [supabase])
+    }, [supabase, currency])
 
     React.useEffect(() => {
         fetchData()
@@ -133,25 +136,25 @@ export default function ChartOfAccountsPage() {
                 <Card className="border-none shadow-md bg-white overflow-hidden relative group">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-[10px] font-bold uppercase tracking-widest">Total Asset Value</CardDescription>
-                        <CardTitle className="text-2xl font-black text-emerald-600">SAR {accounts.filter(a => a.type === 'Asset').reduce((sum, a) => sum + a.balance, 0).toLocaleString()}</CardTitle>
+                        <CardTitle className="text-2xl font-black text-emerald-600">{currency} {accounts.filter(a => a.type === 'Asset').reduce((sum, a) => sum + a.balance, 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white relative group">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-rose-500">Total Liabilities</CardDescription>
-                        <CardTitle className="text-2xl font-black text-rose-600">SAR {accounts.filter(a => a.type === 'Liability').reduce((sum, a) => sum + a.balance, 0).toLocaleString()}</CardTitle>
+                        <CardTitle className="text-2xl font-black text-rose-600">{currency} {accounts.filter(a => a.type === 'Liability').reduce((sum, a) => sum + a.balance, 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white relative group">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-blue-500">Net Revenue (YTD)</CardDescription>
-                        <CardTitle className="text-2xl font-black text-blue-600">SAR 1.2M</CardTitle>
+                        <CardTitle className="text-2xl font-black text-blue-600">{currency} 1.2M</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white relative group">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-orange-500">Operational Expenses</CardDescription>
-                        <CardTitle className="text-2xl font-black text-orange-600">SAR 750K</CardTitle>
+                        <CardTitle className="text-2xl font-black text-orange-600">{currency} 750K</CardTitle>
                     </CardHeader>
                 </Card>
             </div>
