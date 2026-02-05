@@ -8,15 +8,20 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
--- 2. Insert Default Currency
+-- 2. Insert Default Settings
 INSERT INTO public.system_settings (key, value)
-VALUES ('base_currency', '"SAR"')
-ON CONFLICT (key) DO NOTHING;
+VALUES 
+    ('base_currency', '"KWD"'),
+    ('company_name', '"Orbit Foundation"'),
+    ('company_address', '""'),
+    ('tax_id', '""'),
+    ('notifications', '{"email": true, "lowStock": true, "payments": true}')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- 3. Enable RLS
 ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
--- 4. Basic Policy (Read for authenticated, Update for Admin role - keeping it simple for now)
+-- 4. Basic Policy
 DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.system_settings;
 CREATE POLICY "Enable read access for authenticated users" ON public.system_settings FOR SELECT TO authenticated USING (true);
 

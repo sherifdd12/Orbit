@@ -10,7 +10,9 @@ import {
     UserPlus,
     MoreHorizontal,
     Search,
-    Check
+    Check,
+    Edit,
+    Trash2
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -43,6 +45,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -84,10 +88,28 @@ interface Permission {
 
 export default function AdminPage() {
     const { dict } = useLanguage()
-    const { currency, setCurrency } = useSettings()
+    const {
+        currency, setCurrency,
+        companyName, companyAddress, taxId,
+        notifications, updateSettings
+    } = useSettings()
+
     const [users, setUsers] = React.useState<User[]>([])
     const [roles, setRoles] = React.useState<Role[]>([])
     const [permissions, setPermissions] = React.useState<Permission[]>([])
+
+    // Internal state for form fields
+    const [localCompanyName, setLocalCompanyName] = React.useState(companyName)
+    const [localCompanyAddress, setLocalCompanyAddress] = React.useState(companyAddress)
+    const [localTaxId, setLocalTaxId] = React.useState(taxId)
+
+    // Sync local state when context settings load
+    React.useEffect(() => {
+        setLocalCompanyName(companyName)
+        setLocalCompanyAddress(companyAddress)
+        setLocalTaxId(taxId)
+    }, [companyName, companyAddress, taxId])
+
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
 
@@ -122,6 +144,26 @@ export default function AdminPage() {
         alert(`${action} feature is under development. Coming soon!`)
     }
 
+    const handleSaveCompanyInfo = async () => {
+        try {
+            await updateSettings({
+                companyName: localCompanyName,
+                companyAddress: localCompanyAddress,
+                taxId: localTaxId
+            })
+            alert("Company information updated successfully!")
+        } catch (err) {
+            alert("Failed to update company information.")
+        }
+    }
+
+    const handleToggleNotification = async (key: 'email' | 'lowStock' | 'payments') => {
+        const newNotifications = {
+            ...notifications,
+            [key]: !notifications[key]
+        }
+        await updateSettings({ notifications: newNotifications })
+    }
     const handleAssignRole = async () => {
         if (!selectedUser || !selectedRoleId) return
         const { error } = await supabase
@@ -164,6 +206,13 @@ export default function AdminPage() {
         }
     }
 
+    const handleDeleteUser = async (user: User) => {
+        if (!confirm(`Are you sure you want to delete user ${user.full_name || user.email}?`)) return
+        const { error } = await supabase.from('profiles').delete().eq('id', user.id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
     const filteredUsers = users.filter(u =>
         u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -174,6 +223,7 @@ export default function AdminPage() {
         acc[perm.module].push(perm)
         return acc
     }, {} as Record<string, Permission[]>)
+
 
     return (
         <div className="space-y-6">
@@ -266,11 +316,25 @@ export default function AdminPage() {
                                                             <Button variant="ghost" size="sm"><MoreHorizontal className="h-4 w-4" /></Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => { setSelectedUser(user); setIsRoleDialogOpen(true); }}>
-                                                                {dict.admin.assignRole}
+                                                            <DropdownMenuItem onClick={() => {
+                                                                setSelectedUser(user)
+                                                                setSelectedRoleId(user.role_id || "")
+                                                                setIsRoleDialogOpen(true)
+                                                            }}>
+                                                                <Shield className="h-4 w-4 mr-2" /> {dict.admin.assignRole}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleActionPlaceholder('Edit User')}>
+                                                                <Edit className="h-4 w-4 mr-2" /> {dict.admin.editPermissions}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleToggleUserStatus(user)}>
                                                                 {user.is_active !== false ? 'Deactivate' : 'Activate'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-rose-600"
+                                                                onClick={() => handleDeleteUser(user)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -400,17 +464,29 @@ export default function AdminPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Company Name</Label>
-                                    <Input defaultValue="Orbit Foundation" />
+                                    <Input
+                                        value={localCompanyName}
+                                        onChange={(e) => setLocalCompanyName(e.target.value)}
+                                        placeholder="Orbit Foundation"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Tax ID / VAT Number</Label>
-                                    <Input placeholder="Enter tax ID" />
+                                    <Input
+                                        value={localTaxId}
+                                        onChange={(e) => setLocalTaxId(e.target.value)}
+                                        placeholder="Enter tax ID"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>{dict.common.address}</Label>
-                                    <Input placeholder="Company address" />
+                                    <Input
+                                        value={localCompanyAddress}
+                                        onChange={(e) => setLocalCompanyAddress(e.target.value)}
+                                        placeholder="Company address"
+                                    />
                                 </div>
-                                <Button className="w-full" onClick={() => handleActionPlaceholder('Save Company Info')}>{dict.common.save}</Button>
+                                <Button className="w-full" onClick={handleSaveCompanyInfo}>{dict.common.save}</Button>
                             </CardContent>
                         </Card>
 
@@ -427,21 +503,39 @@ export default function AdminPage() {
                                         <p className="font-medium">Email Notifications</p>
                                         <p className="text-sm text-muted-foreground">Receive email alerts for important events</p>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Email Notifications')}>Enable</Button>
+                                    <Button
+                                        variant={notifications.email ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleToggleNotification('email')}
+                                    >
+                                        {notifications.email ? "Enabled" : "Disabled"}
+                                    </Button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">Low Stock Alerts</p>
                                         <p className="text-sm text-muted-foreground">Get notified when items fall below minimum</p>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Low Stock Alerts')}>Enable</Button>
+                                    <Button
+                                        variant={notifications.lowStock ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleToggleNotification('lowStock')}
+                                    >
+                                        {notifications.lowStock ? "Enabled" : "Disabled"}
+                                    </Button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">Payment Reminders</p>
                                         <p className="text-sm text-muted-foreground">Automatic reminders for overdue invoices</p>
                                     </div>
-                                    <Button variant="outline" size="sm" onClick={() => handleActionPlaceholder('Enable Payment Reminders')}>Enable</Button>
+                                    <Button
+                                        variant={notifications.payments ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleToggleNotification('payments')}
+                                    >
+                                        {notifications.payments ? "Enabled" : "Disabled"}
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
