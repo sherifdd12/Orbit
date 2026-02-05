@@ -5,6 +5,48 @@
 -- based on user roles (Admin, Manager, Employee)
 -- ============================================================
 
+-- Ensure core metadata tables exist first
+CREATE TABLE IF NOT EXISTS public.company_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_name TEXT NOT NULL DEFAULT 'Orbit ERP',
+    currency TEXT DEFAULT 'USD',
+    logo_url TEXT,
+    timezone TEXT DEFAULT 'UTC',
+    address TEXT,
+    email TEXT,
+    phone TEXT,
+    website TEXT,
+    tax_number TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.roles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT UNIQUE NOT NULL,
+    description TEXT,
+    module TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.role_permissions (
+    role_id UUID REFERENCES public.roles(id) ON DELETE CASCADE,
+    permission_id UUID REFERENCES public.permissions(id) ON DELETE CASCADE,
+    PRIMARY KEY (role_id, permission_id)
+);
+
+-- Enable RLS
+ALTER TABLE public.company_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.role_permissions ENABLE ROW LEVEL SECURITY;
+
 -- First, ensure we have a function to get the current user's role
 CREATE OR REPLACE FUNCTION get_user_role()
 RETURNS TEXT AS $$
