@@ -71,6 +71,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function to check if the current user owns the employee record
+CREATE OR REPLACE FUNCTION is_employee_owner(emp_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.employees 
+        WHERE id = emp_id AND profile_id = auth.uid()
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- ============================================================
 -- PROFILES TABLE POLICIES
 -- ============================================================
@@ -315,6 +326,24 @@ CREATE POLICY "purchase_orders_delete_policy" ON purchase_orders
     FOR DELETE TO authenticated USING (is_admin());
 
 -- ============================================================
+-- PURCHASE_BILLS TABLE POLICIES
+-- ============================================================
+DROP POLICY IF EXISTS "purchase_bills_select_policy" ON purchase_bills;
+DROP POLICY IF EXISTS "purchase_bills_update_policy" ON purchase_bills;
+DROP POLICY IF EXISTS "purchase_bills_insert_policy" ON purchase_bills;
+
+CREATE POLICY "purchase_bills_select_policy" ON purchase_bills
+    FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "purchase_bills_update_policy" ON purchase_bills
+    FOR UPDATE TO authenticated
+    USING (is_manager_or_admin())
+    WITH CHECK (is_manager_or_admin());
+
+CREATE POLICY "purchase_bills_insert_policy" ON purchase_bills
+    FOR INSERT TO authenticated WITH CHECK (is_manager_or_admin());
+
+-- ============================================================
 -- INVOICES TABLE POLICIES
 -- ============================================================
 DROP POLICY IF EXISTS "invoices_select_policy" ON invoices;
@@ -420,18 +449,91 @@ DROP POLICY IF EXISTS "attendance_insert_policy" ON attendance;
 -- Users can see their own attendance, Managers/Admins see all
 CREATE POLICY "attendance_select_policy" ON attendance
     FOR SELECT TO authenticated
-    USING (
-        profile_id = auth.uid() OR is_manager_or_admin()
-    );
+    USING (is_employee_owner(employee_id) OR is_manager_or_admin());
 
 -- Users can record their own attendance
 CREATE POLICY "attendance_insert_policy" ON attendance
     FOR INSERT TO authenticated
-    WITH CHECK (profile_id = auth.uid() OR is_manager_or_admin());
+    WITH CHECK (is_employee_owner(employee_id) OR is_manager_or_admin());
 
 -- Only Managers/Admins can modify attendance
 CREATE POLICY "attendance_update_policy" ON attendance
     FOR UPDATE TO authenticated
+    USING (is_manager_or_admin())
+    WITH CHECK (is_manager_or_admin());
+
+-- ============================================================
+-- LEAVE_REQUESTS TABLE POLICIES
+-- ============================================================
+DROP POLICY IF EXISTS "leave_requests_select_policy" ON leave_requests;
+DROP POLICY IF EXISTS "leave_requests_insert_policy" ON leave_requests;
+DROP POLICY IF EXISTS "leave_requests_update_policy" ON leave_requests;
+
+CREATE POLICY "leave_requests_select_policy" ON leave_requests
+    FOR SELECT TO authenticated
+    USING (is_employee_owner(employee_id) OR is_manager_or_admin());
+
+CREATE POLICY "leave_requests_insert_policy" ON leave_requests
+    FOR INSERT TO authenticated
+    WITH CHECK (is_employee_owner(employee_id) OR is_manager_or_admin());
+
+CREATE POLICY "leave_requests_update_policy" ON leave_requests
+    FOR UPDATE TO authenticated
+    USING (is_manager_or_admin())
+    WITH CHECK (is_manager_or_admin());
+
+-- ============================================================
+-- TIMESHEETS TABLE POLICIES
+-- ============================================================
+DROP POLICY IF EXISTS "timesheets_select_policy" ON timesheets;
+DROP POLICY IF EXISTS "timesheets_insert_policy" ON timesheets;
+DROP POLICY IF EXISTS "timesheets_update_policy" ON timesheets;
+
+CREATE POLICY "timesheets_select_policy" ON timesheets
+    FOR SELECT TO authenticated
+    USING (is_employee_owner(employee_id) OR is_manager_or_admin());
+
+CREATE POLICY "timesheets_insert_policy" ON timesheets
+    FOR INSERT TO authenticated
+    WITH CHECK (is_employee_owner(employee_id) OR is_manager_or_admin());
+
+CREATE POLICY "timesheets_update_policy" ON timesheets
+    FOR UPDATE TO authenticated
+    USING (is_employee_owner(employee_id) OR is_manager_or_admin());
+
+-- ============================================================
+-- ACCOUNTS & JOURNAL TABLE POLICIES (Finance)
+-- ============================================================
+DROP POLICY IF EXISTS "accounts_select_policy" ON accounts;
+DROP POLICY IF EXISTS "accounts_manage_policy" ON accounts;
+
+CREATE POLICY "accounts_select_policy" ON accounts
+    FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "accounts_manage_policy" ON accounts
+    FOR ALL TO authenticated
+    USING (is_manager_or_admin())
+    WITH CHECK (is_manager_or_admin());
+
+DROP POLICY IF EXISTS "journal_entries_select_policy" ON journal_entries;
+DROP POLICY IF EXISTS "journal_entries_manage_policy" ON journal_entries;
+
+CREATE POLICY "journal_entries_select_policy" ON journal_entries
+    FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "journal_entries_manage_policy" ON journal_entries
+    FOR ALL TO authenticated
+    USING (is_manager_or_admin())
+    WITH CHECK (is_manager_or_admin());
+
+DROP POLICY IF EXISTS "journal_items_select_policy" ON journal_items;
+DROP POLICY IF EXISTS "journal_items_manage_policy" ON journal_items;
+
+CREATE POLICY "journal_items_select_policy" ON journal_items
+    FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "journal_items_manage_policy" ON journal_items
+    FOR ALL TO authenticated
     USING (is_manager_or_admin())
     WITH CHECK (is_manager_or_admin());
 
