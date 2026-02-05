@@ -20,8 +20,11 @@ import {
     Truck,
     Settings,
     Building2,
-    ChevronDown
+    ChevronDown,
+    LogOut,
+    User
 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 import {
     Sidebar,
@@ -45,10 +48,38 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { logout } from "@/app/login/actions"
 
 export function AppSidebar() {
     const pathname = usePathname()
     const { dict, locale } = useLanguage()
+    const [user, setUser] = React.useState<any>(null)
+    const supabase = createClient()
+
+    React.useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                // Fetch profile to get full name
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single()
+
+                setUser({ ...user, profile })
+            }
+        }
+        getUser()
+    }, [supabase])
 
     // Main navigation items
     const mainItems = [
@@ -224,15 +255,31 @@ export function AppSidebar() {
             <SidebarFooter className="p-4 border-t border-sidebar-border">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton className="py-5 h-auto">
-                            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow">
-                                OA
-                            </div>
-                            <div className="flex flex-col items-start leading-none ms-2">
-                                <span className="font-medium">Orbit Admin</span>
-                                <span className="text-[10px] text-muted-foreground">admin@orbit.erp</span>
-                            </div>
-                        </SidebarMenuButton>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton className="py-7 h-auto group-hover:bg-slate-100 transition-colors">
+                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md border-2 border-white">
+                                        {user?.profile?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    <div className="flex flex-col items-start leading-none ms-3">
+                                        <span className="font-bold text-sm text-slate-900">{user?.profile?.full_name || "Orbit User"}</span>
+                                        <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{user?.email}</span>
+                                    </div>
+                                    <ChevronDown className="ms-auto size-4 opacity-50" />
+                                </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 mb-2 side-right">
+                                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="gap-2 cursor-pointer">
+                                    <User className="size-4" /> Profile Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => logout()}>
+                                    <LogOut className="size-4 text-rose-500" />
+                                    <span className="text-rose-500 font-medium">Log out</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
@@ -244,6 +291,23 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { locale, setLocale, dict } = useLanguage()
+    const [user, setUser] = React.useState<any>(null)
+    const supabase = createClient()
+
+    React.useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single()
+                setUser({ ...user, profile })
+            }
+        }
+        getUser()
+    }, [supabase])
 
     return (
         <SidebarProvider>
@@ -278,8 +342,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
                         <NotificationCenter />
 
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow cursor-pointer">
-                            OA
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs shadow cursor-pointer border-2 border-white">
+                            {user?.profile?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
                         </div>
                     </div>
                 </header>
