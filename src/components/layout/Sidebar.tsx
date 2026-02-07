@@ -22,7 +22,8 @@ import {
     Building2,
     ChevronDown,
     LogOut,
-    User
+    User,
+    BarChart3
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -91,6 +92,7 @@ export function AppSidebar() {
         { title: dict.sidebar.projects, icon: Briefcase, href: "/projects" },
         { title: dict.sidebar.tasks, icon: CheckSquare, href: "/tasks" },
         { title: dict.sidebar.inventory, icon: Package, href: "/inventory" },
+        { title: dict.inventory?.stockMovement || "Stock Movements", icon: Truck, href: "/inventory/movements" },
         { title: dict.sidebar.warehouses, icon: Building2, href: "/warehouses" },
     ]
 
@@ -126,11 +128,13 @@ export function AppSidebar() {
     const otherItems = [
         { title: dict.sidebar.documents, icon: Files, href: "/documents" },
         { title: dict.sidebar.email, icon: Mail, href: "/email" },
+        { title: dict.sidebar.reports, icon: BarChart3, href: "/reports" },
     ]
 
     // Admin items
     const adminItems = [
         { title: dict.sidebar.admin, icon: Settings, href: "/admin" },
+        { title: dict.templates?.title || "Document Templates", icon: FileText, href: "/admin/templates" },
     ]
 
     const NavGroup = ({ label, items }: { label: string, items: typeof mainItems }) => (
