@@ -1,10 +1,10 @@
--- Stock Movements Table Migration
+-- Stock Movements Table Migration (Corrected)
 -- This creates the stock_movements table for tracking inventory movements
 
 -- Create stock_movements table
 CREATE TABLE IF NOT EXISTS stock_movements (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    -- removed organization_id as it doesn't exist in other tables
     movement_number VARCHAR(50) NOT NULL,
     movement_type VARCHAR(20) NOT NULL CHECK (movement_type IN ('IN', 'OUT', 'TRANSFER', 'ADJUSTMENT')),
     movement_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -25,41 +25,28 @@ CREATE TABLE IF NOT EXISTS stock_movements (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_stock_movements_org ON stock_movements(organization_id);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(movement_type);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_status ON stock_movements(status);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(movement_date);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_from_warehouse ON stock_movements(from_warehouse_id);
 CREATE INDEX IF NOT EXISTS idx_stock_movements_to_warehouse ON stock_movements(to_warehouse_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_stock_movements_number_org ON stock_movements(organization_id, movement_number);
+-- removed idx_stock_movements_number_org
 
 -- Enable RLS
 ALTER TABLE stock_movements ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY "Users can view stock movements in their organization"
+CREATE POLICY "Users can view stock movements"
     ON stock_movements FOR SELECT
-    USING (
-        organization_id IN (
-            SELECT organization_id FROM profiles WHERE id = auth.uid()
-        )
-    );
+    USING (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can insert stock movements in their organization"
+CREATE POLICY "Users can insert stock movements"
     ON stock_movements FOR INSERT
-    WITH CHECK (
-        organization_id IN (
-            SELECT organization_id FROM profiles WHERE id = auth.uid()
-        )
-    );
+    WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY "Users can update stock movements in their organization"
+CREATE POLICY "Users can update stock movements"
     ON stock_movements FOR UPDATE
-    USING (
-        organization_id IN (
-            SELECT organization_id FROM profiles WHERE id = auth.uid()
-        )
-    );
+    USING (auth.uid() IS NOT NULL);
 
 -- Create trigger for updated_at
 CREATE OR REPLACE FUNCTION update_stock_movements_updated_at()
@@ -79,7 +66,6 @@ CREATE TRIGGER trigger_stock_movements_updated_at
 CREATE OR REPLACE FUNCTION update_inventory_on_movement_complete()
 RETURNS TRIGGER AS $$
 DECLARE
-    item RECORD;
     item_data JSONB;
 BEGIN
     -- Only trigger when status changes to 'Completed'
@@ -90,28 +76,30 @@ BEGIN
             -- Update inventory based on movement type
             IF NEW.movement_type = 'IN' THEN
                 -- Increase stock for goods receipt
-                UPDATE inventory_items 
-                SET stock_quantity = stock_quantity + (item_data->>'quantity')::numeric,
-                    updated_at = NOW()
+                UPDATE items 
+                SET stock_quantity = COALESCE(stock_quantity, 0) + (item_data->>'quantity')::numeric
                 WHERE id = (item_data->>'item_id')::uuid;
                 
             ELSIF NEW.movement_type = 'OUT' THEN
                 -- Decrease stock for goods issue
-                UPDATE inventory_items 
-                SET stock_quantity = stock_quantity - (item_data->>'quantity')::numeric,
-                    updated_at = NOW()
+                UPDATE items 
+                SET stock_quantity = COALESCE(stock_quantity, 0) - (item_data->>'quantity')::numeric
                 WHERE id = (item_data->>'item_id')::uuid;
                 
             ELSIF NEW.movement_type = 'ADJUSTMENT' THEN
-                -- Direct set for physical count adjustment (positive or negative)
-                -- The quantity in adjustment represents the difference, not absolute value
-                UPDATE inventory_items 
-                SET stock_quantity = stock_quantity + (item_data->>'quantity')::numeric,
-                    updated_at = NOW()
+                -- Add the quantity (which can be negative) to existing stock
+                -- Adjustment here works as "Add specific quantity"
+                -- If we want "Set to specific quantity", we need different logic. 
+                -- Assuming Adjustment means adding/removing a discrepancy amount.
+                UPDATE items 
+                SET stock_quantity = COALESCE(stock_quantity, 0) + (item_data->>'quantity')::numeric
                 WHERE id = (item_data->>'item_id')::uuid;
             END IF;
-            -- Note: TRANSFER doesn't change total inventory, just moves between warehouses
-            -- For warehouse-level tracking, additional warehouse_stock table may be needed
+            -- Note: TRANSFER doesn't change total inventory of 'items' table as 'items' is global?
+            -- Unless 'items' table has 'warehouse_id' (it does NOT in the file I read).
+            -- If 'items' is global stock, TRANSFER doesn't change global stock.
+            -- If proper warehouse tracking is needed, we need a 'warehouse_stock' table.
+            -- For now, `items.stock_quantity` is presumably the global stock or main warehouse stock.
         END LOOP;
         
         NEW.completed_at = NOW();
@@ -129,4 +117,3 @@ CREATE TRIGGER trigger_update_inventory_on_movement
 -- Comments
 COMMENT ON TABLE stock_movements IS 'Tracks all inventory movements including goods receipts, issues, transfers, and adjustments';
 COMMENT ON COLUMN stock_movements.movement_type IS 'IN=Goods Receipt, OUT=Goods Issue, TRANSFER=Inter-warehouse transfer, ADJUSTMENT=Physical count adjustment';
-COMMENT ON COLUMN stock_movements.items IS 'JSONB array of items: [{item_id, item_name, quantity, unit, unit_cost, notes}]';
