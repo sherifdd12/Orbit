@@ -23,7 +23,14 @@ import {
     ChevronDown,
     LogOut,
     User,
-    BarChart3
+    BarChart3,
+    Landmark,
+    CreditCard,
+    History,
+    PieChart,
+    Megaphone,
+    ScrollText,
+    BadgeDollarSign
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -94,10 +101,12 @@ export function AppSidebar() {
         { title: dict.sidebar.inventory, icon: Package, href: "/inventory" },
         { title: dict.inventory?.stockMovement || "Stock Movements", icon: Truck, href: "/inventory/movements" },
         { title: dict.sidebar.warehouses, icon: Building2, href: "/warehouses" },
+        { title: dict.sidebar.shipments || "Shipments", icon: Truck, href: "/shipments" },
     ]
 
     // Sales & CRM group
     const salesItems = [
+        { title: dict.sales?.crm || "CRM", icon: Megaphone, href: "/crm" },
         { title: dict.sidebar.customers, icon: Users, href: "/sales/customers" },
         { title: dict.sales?.salesOrders || "Sales Orders", icon: ShoppingCart, href: "/sales/orders" },
         { title: dict.sidebar.invoices, icon: FileText, href: "/sales/invoices" },
@@ -115,6 +124,10 @@ export function AppSidebar() {
         { title: dict.finance?.chartOfAccounts || "Chart of Accounts", icon: Wallet, href: "/finance/accounts" },
         { title: dict.finance?.journalEntries || "Journal Entries", icon: FileText, href: "/finance/journal" },
         { title: dict.finance?.transactions || "Transactions", icon: Wallet, href: "/finance" },
+        { title: dict.finance?.budgeting || "Budgeting", icon: PieChart, href: "/budgeting" },
+        { title: dict.finance?.bank || "Bank Reconciliation", icon: Landmark, href: "/bank" },
+        { title: dict.finance?.assets || "Fixed Assets", icon: Building2, href: "/assets" },
+        { title: dict.finance?.payments || "Payments", icon: CreditCard, href: "/payments" },
     ]
 
     // HR group
@@ -122,6 +135,7 @@ export function AppSidebar() {
         { title: dict.sidebar.employees, icon: Users, href: "/hr/employees" },
         { title: dict.sidebar.attendance, icon: CheckSquare, href: "/hr/attendance" },
         { title: dict.hr?.leaveRequests || "Leave Requests", icon: FileText, href: "/hr/leave" },
+        { title: dict.hr?.payroll || "Payroll", icon: BadgeDollarSign, href: "/payroll" },
     ]
 
     // Other items
@@ -135,6 +149,7 @@ export function AppSidebar() {
     const adminItems = [
         { title: dict.sidebar.admin, icon: Settings, href: "/admin" },
         { title: dict.templates?.title || "Document Templates", icon: FileText, href: "/admin/templates" },
+        { title: dict.admin?.audit || "Audit Logs", icon: History, href: "/audit" },
     ]
 
     const NavGroup = ({ label, items }: { label: string, items: typeof mainItems }) => (

@@ -25,6 +25,7 @@ export const dictionaries = {
             employees: "Employees",
             attendance: "Attendance",
             warehouses: "Warehouses",
+            shipments: "Shipments",
         },
         // Dashboard
         dashboard: {
@@ -142,6 +143,10 @@ export const dictionaries = {
             draft: "Draft",
             posted: "Posted",
             cancelled: "Cancelled",
+            budgeting: "Budgeting",
+            bank: "Bank Reconciliation",
+            assets: "Fixed Assets",
+            payments: "Payments",
         },
         // Inventory Module
         inventory: {
@@ -175,6 +180,7 @@ export const dictionaries = {
         // Sales Module
         sales: {
             title: "Sales",
+            crm: "CRM",
             customers: "Customers",
             quotations: "Quotations",
             salesOrders: "Sales Orders",
@@ -313,6 +319,7 @@ export const dictionaries = {
             newUser: "New User",
             newRole: "New Role",
             editPermissions: "Edit Permissions",
+            audit: "Audit Logs",
         },
         // Documents Module
         documents: {
@@ -523,6 +530,7 @@ export const dictionaries = {
             employees: "الموظفين",
             attendance: "الحضور",
             warehouses: "المستودعات",
+            shipments: "الشحنات",
         },
         // Dashboard
         dashboard: {
@@ -641,6 +649,10 @@ export const dictionaries = {
             draft: "مسودة",
             posted: "مرحّل",
             cancelled: "ملغى",
+            budgeting: "الموازنة التقديرية",
+            bank: "مطابقة البنك",
+            assets: "الأصول الثابتة",
+            payments: "المدفوعات",
         },
         // Inventory Module
         inventory: {
@@ -674,6 +686,7 @@ export const dictionaries = {
         // Sales Module
         sales: {
             title: "المبيعات",
+            crm: "إدارة العلاقات (CRM)",
             customers: "العملاء",
             quotations: "عروض الأسعار",
             salesOrders: "أوامر البيع",
@@ -812,6 +825,7 @@ export const dictionaries = {
             newUser: "مستخدم جديد",
             newRole: "دور جديد",
             editPermissions: "تعديل الصلاحيات",
+            audit: "سجلات التدقيق",
         },
         // Documents Module
         documents: {
