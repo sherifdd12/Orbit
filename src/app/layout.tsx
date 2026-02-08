@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AppLayout } from "@/components/layout/Sidebar";
-import { Inter } from "next/font/google";
+import { Inter, Cairo } from "next/font/google";
 import { cookies } from "next/headers";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import { SettingsProvider } from "@/lib/context/SettingsContext";
@@ -8,6 +8,7 @@ import { Locale } from "@/lib/i18n/dictionaries";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const cairo = Cairo({ subsets: ["arabic"], weight: ["300", "400", "500", "600", "700"] });
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={isRTL ? "rtl" : "ltr"} className="light">
-      <body className={`${inter.className} min-h-screen antialiased`}>
+      <body className={`${locale === 'ar' ? cairo.className : inter.className} min-h-screen antialiased`}>
         <LanguageProvider initialLocale={locale}>
           <SettingsProvider>
             <AppLayout>{children}</AppLayout>
