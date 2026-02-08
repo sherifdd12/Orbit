@@ -46,6 +46,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 
@@ -71,28 +81,62 @@ export default function VendorBillsPage() {
     const [bills, setBills] = React.useState<Bill[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
+    const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+    const [vendors, setVendors] = React.useState<{ id: string, name: string }[]>([])
+    const [newBill, setNewBill] = React.useState({
+        vendor_id: '',
+        bill_number: '',
+        amount: 0,
+        due_date: format(new Date(), "yyyy-MM-dd"),
+        status: 'Draft'
+    })
 
     const supabase = createClient()
 
     const fetchData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('vendor_bills')
-            .select(`
-                *,
-                vendor:vendors(name)
-            `)
-            .order('created_at', { ascending: false })
+        const [billsRes, vendorsRes] = await Promise.all([
+            supabase.from('vendor_bills').select('*, vendor:vendors(name)').order('created_at', { ascending: false }),
+            supabase.from('vendors').select('id, name').order('name')
+        ])
 
-        if (!error) {
-            setBills(data || [])
-        }
+        if (!billsRes.error) setBills(billsRes.data || [])
+        if (!vendorsRes.error) setVendors(vendorsRes.data || [])
         setLoading(false)
     }, [supabase])
 
     React.useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const handleCreateBill = async () => {
+        if (!newBill.vendor_id || !newBill.amount) {
+            alert("Please fill in all required fields")
+            return
+        }
+
+        const { error } = await supabase.from('vendor_bills').insert([{
+            vendor_id: newBill.vendor_id,
+            bill_number: newBill.bill_number,
+            amount: newBill.amount,
+            due_date: newBill.due_date,
+            status: 'Posted' // Default to Posted for simplicity or Draft
+        }])
+
+        if (error) {
+            alert(error.message)
+        } else {
+            setIsCreateOpen(false)
+            setNewBill({
+                vendor_id: '',
+                bill_number: '',
+                amount: 0,
+                due_date: format(new Date(), "yyyy-MM-dd"),
+                status: 'Draft'
+            })
+            fetchData()
+        }
+    }
 
     const getStatusBadge = (status: Bill['status']) => {
         switch (status) {
@@ -119,9 +163,63 @@ export default function VendorBillsPage() {
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline"><ArrowDownToLine className="h-4 w-4 mr-2" /> Import</Button>
-                    <Button className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 shadow-md border-none px-6">
-                        <Plus className="mr-2 h-4 w-4" /> New Bill
-                    </Button>
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 shadow-md border-none px-6">
+                                <Plus className="mr-2 h-4 w-4" /> New Bill
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Register New Bill</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Vendor</Label>
+                                    <Select onValueChange={(val) => setNewBill({ ...newBill, vendor_id: val })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Vendor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {vendors.map(v => (
+                                                <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Bill Number</Label>
+                                    <Input
+                                        value={newBill.bill_number}
+                                        onChange={(e) => setNewBill({ ...newBill, bill_number: e.target.value })}
+                                        placeholder="e.g. INV-001"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Amount</Label>
+                                        <Input
+                                            type="number"
+                                            value={newBill.amount || ''}
+                                            onChange={(e) => setNewBill({ ...newBill, amount: parseFloat(e.target.value) || 0 })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Due Date</Label>
+                                        <Input
+                                            type="date"
+                                            value={newBill.due_date}
+                                            onChange={(e) => setNewBill({ ...newBill, due_date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                                <Button onClick={handleCreateBill} className="bg-gradient-to-r from-orange-500 to-amber-600">Register Bill</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </div>
 

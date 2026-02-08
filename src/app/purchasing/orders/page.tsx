@@ -129,7 +129,7 @@ export default function PurchaseOrdersPage() {
     const fetchData = React.useCallback(async () => {
         setLoading(true)
         const [ordersRes, vendorsRes] = await Promise.all([
-            supabase.from('purchase_orders').select('*, vendor:vendors(id, name, email, phone, address)').order('order_date', { ascending: false }),
+            supabase.from('purchase_orders').select('*, vendor:vendors(id, name, email, phone, address), items:purchase_order_items(*)').order('order_date', { ascending: false }),
             supabase.from('vendors').select('id, name, email, phone, address').order('name')
         ])
 
@@ -190,7 +190,7 @@ export default function PurchaseOrdersPage() {
 
         const { subtotal } = calculateTotals(newOrder.items)
 
-        const { error } = await supabase.from('purchase_orders').insert([{
+        const { data: orderData, error: orderError } = await supabase.from('purchase_orders').insert([{
             vendor_id: newOrder.vendor_id,
             po_number: newOrder.po_number,
             order_date: newOrder.order_date,
@@ -202,21 +202,41 @@ export default function PurchaseOrdersPage() {
             tax_rate: 0,
             tax_amount: 0,
             total: subtotal
-        }])
+        }]).select().single()
 
-        if (error) {
-            alert(error.message)
-        } else {
-            setIsCreateOpen(false)
-            setNewOrder({
-                vendor_id: '',
-                po_number: `PO-${Date.now().toString().slice(-8)}`,
-                order_date: format(new Date(), "yyyy-MM-dd"),
-                expected_date: format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-                notes: '',
-                items: [{ description: '', quantity: 1, unit: 'Pcs', unitPrice: 0, total: 0 }]
-            })
-            fetchData()
+        if (orderError) {
+            alert(orderError.message)
+            return
+        }
+
+        if (orderData) {
+            // Insert Items
+            const itemsToInsert = newOrder.items.map(item => ({
+                purchase_order_id: orderData.id,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                unit_price: item.unitPrice,
+                total: item.total
+            }))
+
+            const { error: itemsError } = await supabase.from('purchase_order_items').insert(itemsToInsert)
+
+            if (itemsError) {
+                console.error('Error inserting items:', itemsError)
+                alert(isArabic ? 'تم إنشاء أمر الشراء ولكن فشل حفظ البنود' : 'PO created but failed to save items')
+            } else {
+                setIsCreateOpen(false)
+                setNewOrder({
+                    vendor_id: '',
+                    po_number: `PO-${Date.now().toString().slice(-8)}`,
+                    order_date: format(new Date(), "yyyy-MM-dd"),
+                    expected_date: format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+                    notes: '',
+                    items: [{ description: '', quantity: 1, unit: 'Pcs', unitPrice: 0, total: 0 }]
+                })
+                fetchData()
+            }
         }
     }
 

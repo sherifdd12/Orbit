@@ -32,6 +32,8 @@ interface PrintDocumentProps {
             address?: string
             addressAr?: string
             taxNumber?: string
+            phone?: string
+            email?: string
         }
         items: Array<{
             no: number

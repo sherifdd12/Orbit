@@ -137,7 +137,7 @@ export default function SalesOrdersPage() {
         order_number: `SO-${Date.now().toString().slice(-8)}`,
         order_date: format(new Date(), "yyyy-MM-dd"),
         delivery_date: '',
-        status: 'Quotation' as const,
+        status: 'Quotation' as SalesOrder['status'],
         notes: '',
         items: [{ description: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discount: 0, total: 0 }] as SalesOrderItem[]
     })
@@ -147,7 +147,7 @@ export default function SalesOrdersPage() {
     const fetchData = React.useCallback(async () => {
         setLoading(true)
         const [ordersRes, customersRes, inventoryRes] = await Promise.all([
-            supabase.from('sale_orders').select('*, customer:customers(id, name, email, phone, address)').order('order_date', { ascending: false }),
+            supabase.from('sale_orders').select('*, customer:customers(id, name, email, phone, address), items:sale_order_items(*)').order('order_date', { ascending: false }),
             supabase.from('customers').select('id, name, email, phone, address').order('name'),
             supabase.from('inventory_items').select('id, name, sku, unit_price, quantity, unit').order('name')
         ])
@@ -215,7 +215,7 @@ export default function SalesOrdersPage() {
         const taxAmount = (subtotal - discount) * (taxRate / 100)
         const total = subtotal - discount + taxAmount
 
-        const { error } = await supabase.from('sale_orders').insert([{
+        const { data: orderData, error: orderError } = await supabase.from('sale_orders').insert([{
             customer_id: newOrder.customer_id,
             order_number: newOrder.order_number,
             order_date: newOrder.order_date,
@@ -227,22 +227,43 @@ export default function SalesOrdersPage() {
             tax_rate: taxRate,
             tax_amount: taxAmount,
             total
-        }])
+        }]).select().single()
 
-        if (error) {
-            alert(error.message)
-        } else {
-            setIsCreateOpen(false)
-            setNewOrder({
-                customer_id: '',
-                order_number: `SO-${Date.now().toString().slice(-8)}`,
-                order_date: format(new Date(), "yyyy-MM-dd"),
-                delivery_date: '',
-                status: 'Quotation',
-                notes: '',
-                items: [{ description: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discount: 0, total: 0 }]
-            })
-            fetchData()
+        if (orderError) {
+            alert(orderError.message)
+            return
+        }
+
+        if (orderData) {
+            // Insert Items
+            const itemsToInsert = newOrder.items.map(item => ({
+                sale_order_id: orderData.id,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                unit_price: item.unitPrice,
+                discount: item.discount,
+                total: item.total
+            }))
+
+            const { error: itemsError } = await supabase.from('sale_order_items').insert(itemsToInsert)
+
+            if (itemsError) {
+                console.error('Error inserting items:', itemsError)
+                alert(isArabic ? 'تم إنشاء الطلب ولكن فشل حفظ البنود' : 'Order created but failed to save items')
+            } else {
+                setIsCreateOpen(false)
+                setNewOrder({
+                    customer_id: '',
+                    order_number: `SO-${Date.now().toString().slice(-8)}`,
+                    order_date: format(new Date(), "yyyy-MM-dd"),
+                    delivery_date: '',
+                    status: 'Quotation',
+                    notes: '',
+                    items: [{ description: '', quantity: 1, unit: 'Pcs', unitPrice: 0, discount: 0, total: 0 }]
+                })
+                fetchData()
+            }
         }
     }
 
