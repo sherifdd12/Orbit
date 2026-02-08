@@ -1,0 +1,1034 @@
+"use client"
+
+import * as React from "react"
+import {
+    Users,
+    Plus,
+    Search,
+    MoreHorizontal,
+    Download,
+    Phone,
+    Mail,
+    Building2,
+    DollarSign,
+    Calendar,
+    Target,
+    TrendingUp,
+    UserCheck,
+    UserX,
+    Eye,
+    Edit,
+    Trash2,
+    ArrowRight,
+    Star,
+    Megaphone,
+    Filter,
+    BarChart3
+} from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { format } from "date-fns"
+import Link from "next/link"
+
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs"
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { useSettings } from "@/lib/context/SettingsContext"
+
+export const runtime = 'edge';
+
+interface Lead {
+    id: string
+    lead_number: string | null
+    company_name: string | null
+    contact_name: string
+    email: string | null
+    phone: string | null
+    mobile: string | null
+    source: string | null
+    status: string
+    priority: string
+    estimated_value: number | null
+    expected_close_date: string | null
+    industry: string | null
+    notes: string | null
+    created_at: string
+    profiles?: { full_name: string }
+}
+
+interface Opportunity {
+    id: string
+    opportunity_number: string | null
+    name: string
+    stage: string
+    probability: number
+    amount: number | null
+    expected_close_date: string | null
+    source: string | null
+    notes: string | null
+    created_at: string
+    customers?: { name: string }
+    profiles?: { full_name: string }
+}
+
+interface Campaign {
+    id: string
+    name: string
+    campaign_code: string | null
+    type: string | null
+    status: string
+    start_date: string | null
+    end_date: string | null
+    budget: number | null
+    actual_cost: number | null
+    expected_revenue: number | null
+    actual_revenue: number | null
+    created_at: string
+}
+
+const leadStatusConfig: Record<string, { color: string; label: string }> = {
+    New: { color: 'bg-blue-100 text-blue-700', label: 'New' },
+    Contacted: { color: 'bg-indigo-100 text-indigo-700', label: 'Contacted' },
+    Qualified: { color: 'bg-purple-100 text-purple-700', label: 'Qualified' },
+    Proposal: { color: 'bg-amber-100 text-amber-700', label: 'Proposal' },
+    Negotiation: { color: 'bg-orange-100 text-orange-700', label: 'Negotiation' },
+    Won: { color: 'bg-emerald-100 text-emerald-700', label: 'Won' },
+    Lost: { color: 'bg-rose-100 text-rose-700', label: 'Lost' },
+}
+
+const opportunityStageConfig: Record<string, { color: string; label: string; probability: number }> = {
+    Prospecting: { color: 'bg-slate-100 text-slate-700', label: 'Prospecting', probability: 10 },
+    Qualification: { color: 'bg-blue-100 text-blue-700', label: 'Qualification', probability: 25 },
+    Proposal: { color: 'bg-indigo-100 text-indigo-700', label: 'Proposal', probability: 50 },
+    Negotiation: { color: 'bg-amber-100 text-amber-700', label: 'Negotiation', probability: 75 },
+    ClosedWon: { color: 'bg-emerald-100 text-emerald-700', label: 'Closed Won', probability: 100 },
+    ClosedLost: { color: 'bg-rose-100 text-rose-700', label: 'Closed Lost', probability: 0 },
+}
+
+const priorityConfig: Record<string, { color: string; label: string }> = {
+    Low: { color: 'bg-slate-100 text-slate-600', label: 'Low' },
+    Medium: { color: 'bg-blue-100 text-blue-600', label: 'Medium' },
+    High: { color: 'bg-amber-100 text-amber-600', label: 'High' },
+    Urgent: { color: 'bg-rose-100 text-rose-600', label: 'Urgent' },
+}
+
+export default function CRMPage() {
+    const { dict, locale } = useLanguage()
+    const { formatMoney } = useSettings()
+    const isArabic = locale === 'ar'
+
+    const [leads, setLeads] = React.useState<Lead[]>([])
+    const [opportunities, setOpportunities] = React.useState<Opportunity[]>([])
+    const [campaigns, setCampaigns] = React.useState<Campaign[]>([])
+    const [loading, setLoading] = React.useState(true)
+    const [searchTerm, setSearchTerm] = React.useState("")
+    const [activeTab, setActiveTab] = React.useState("leads")
+
+    // Lead Dialog State
+    const [isLeadDialogOpen, setIsLeadDialogOpen] = React.useState(false)
+    const [newLead, setNewLead] = React.useState({
+        contact_name: '',
+        company_name: '',
+        email: '',
+        phone: '',
+        mobile: '',
+        source: 'Website',
+        priority: 'Medium',
+        estimated_value: 0,
+        expected_close_date: '',
+        industry: '',
+        notes: ''
+    })
+
+    // Opportunity Dialog State
+    const [isOpportunityDialogOpen, setIsOpportunityDialogOpen] = React.useState(false)
+    const [newOpportunity, setNewOpportunity] = React.useState({
+        name: '',
+        stage: 'Prospecting',
+        probability: 10,
+        amount: 0,
+        expected_close_date: '',
+        source: '',
+        notes: ''
+    })
+
+    // Campaign Dialog State
+    const [isCampaignDialogOpen, setIsCampaignDialogOpen] = React.useState(false)
+    const [newCampaign, setNewCampaign] = React.useState({
+        name: '',
+        type: 'Email',
+        start_date: format(new Date(), 'yyyy-MM-dd'),
+        end_date: '',
+        budget: 0,
+        expected_revenue: 0,
+        description: ''
+    })
+
+    const supabase = createClient()
+
+    const generateNumber = (prefix: string) => {
+        const timestamp = Date.now().toString().slice(-6)
+        const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+        return `${prefix}-${timestamp}-${random}`
+    }
+
+    const fetchData = React.useCallback(async () => {
+        setLoading(true)
+        const [leadsRes, opportunitiesRes, campaignsRes] = await Promise.all([
+            supabase.from('leads').select('*, profiles(full_name)').order('created_at', { ascending: false }),
+            supabase.from('opportunities').select('*, customers(name), profiles(full_name)').order('created_at', { ascending: false }),
+            supabase.from('campaigns').select('*').order('created_at', { ascending: false })
+        ])
+
+        if (!leadsRes.error) setLeads(leadsRes.data || [])
+        if (!opportunitiesRes.error) setOpportunities(opportunitiesRes.data || [])
+        if (!campaignsRes.error) setCampaigns(campaignsRes.data || [])
+        setLoading(false)
+    }, [supabase])
+
+    React.useEffect(() => {
+        fetchData()
+    }, [fetchData])
+
+    const handleCreateLead = async () => {
+        if (!newLead.contact_name) return alert(isArabic ? 'اسم جهة الاتصال مطلوب' : 'Contact name is required')
+
+        const leadNumber = generateNumber('LEAD')
+        const { error } = await supabase.from('leads').insert([{
+            lead_number: leadNumber,
+            ...newLead,
+            status: 'New'
+        }])
+
+        if (error) {
+            console.error(error)
+            alert(error.message)
+        } else {
+            setIsLeadDialogOpen(false)
+            setNewLead({
+                contact_name: '',
+                company_name: '',
+                email: '',
+                phone: '',
+                mobile: '',
+                source: 'Website',
+                priority: 'Medium',
+                estimated_value: 0,
+                expected_close_date: '',
+                industry: '',
+                notes: ''
+            })
+            fetchData()
+        }
+    }
+
+    const handleCreateOpportunity = async () => {
+        if (!newOpportunity.name) return alert(isArabic ? 'اسم الفرصة مطلوب' : 'Opportunity name is required')
+
+        const opportunityNumber = generateNumber('OPP')
+        const { error } = await supabase.from('opportunities').insert([{
+            opportunity_number: opportunityNumber,
+            ...newOpportunity
+        }])
+
+        if (error) {
+            console.error(error)
+            alert(error.message)
+        } else {
+            setIsOpportunityDialogOpen(false)
+            setNewOpportunity({
+                name: '',
+                stage: 'Prospecting',
+                probability: 10,
+                amount: 0,
+                expected_close_date: '',
+                source: '',
+                notes: ''
+            })
+            fetchData()
+        }
+    }
+
+    const handleCreateCampaign = async () => {
+        if (!newCampaign.name) return alert(isArabic ? 'اسم الحملة مطلوب' : 'Campaign name is required')
+
+        const campaignCode = generateNumber('CAMP')
+        const { error } = await supabase.from('campaigns').insert([{
+            campaign_code: campaignCode,
+            ...newCampaign,
+            status: 'Planning'
+        }])
+
+        if (error) {
+            console.error(error)
+            alert(error.message)
+        } else {
+            setIsCampaignDialogOpen(false)
+            setNewCampaign({
+                name: '',
+                type: 'Email',
+                start_date: format(new Date(), 'yyyy-MM-dd'),
+                end_date: '',
+                budget: 0,
+                expected_revenue: 0,
+                description: ''
+            })
+            fetchData()
+        }
+    }
+
+    const handleUpdateLeadStatus = async (lead: Lead, newStatus: string) => {
+        const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleUpdateOpportunityStage = async (opportunity: Opportunity, newStage: string) => {
+        const probability = opportunityStageConfig[newStage]?.probability || 0
+        const updates: Record<string, unknown> = { stage: newStage, probability }
+        if (newStage === 'ClosedWon' || newStage === 'ClosedLost') {
+            updates.actual_close_date = format(new Date(), 'yyyy-MM-dd')
+        }
+
+        const { error } = await supabase.from('opportunities').update(updates).eq('id', opportunity.id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleDeleteLead = async (id: string) => {
+        if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا العميل المحتمل؟' : 'Are you sure you want to delete this lead?')) return
+        const { error } = await supabase.from('leads').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleDeleteOpportunity = async (id: string) => {
+        if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذه الفرصة؟' : 'Are you sure you want to delete this opportunity?')) return
+        const { error } = await supabase.from('opportunities').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchData()
+    }
+
+    const handleConvertToCustomer = async (lead: Lead) => {
+        // Create a customer from the lead
+        const { data: customerData, error: customerError } = await supabase.from('customers').insert([{
+            name: lead.company_name || lead.contact_name,
+            contact_person: lead.contact_name,
+            email: lead.email,
+            phone: lead.phone,
+            mobile: lead.mobile
+        }]).select().single()
+
+        if (customerError) {
+            alert(customerError.message)
+            return
+        }
+
+        // Update lead status to Won and link to customer
+        await supabase.from('leads').update({
+            status: 'Won',
+            converted_to_customer_id: customerData.id
+        }).eq('id', lead.id)
+
+        fetchData()
+        alert(isArabic ? 'تم تحويل العميل المحتمل بنجاح!' : 'Lead converted to customer successfully!')
+    }
+
+    const filteredLeads = leads.filter(l =>
+        l.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    const filteredOpportunities = opportunities.filter(o =>
+        o.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    // Stats calculations
+    const leadStats = {
+        total: leads.length,
+        new: leads.filter(l => l.status === 'New').length,
+        qualified: leads.filter(l => l.status === 'Qualified').length,
+        won: leads.filter(l => l.status === 'Won').length,
+        totalValue: leads.reduce((sum, l) => sum + (l.estimated_value || 0), 0)
+    }
+
+    const opportunityStats = {
+        total: opportunities.length,
+        open: opportunities.filter(o => !['ClosedWon', 'ClosedLost'].includes(o.stage)).length,
+        won: opportunities.filter(o => o.stage === 'ClosedWon').length,
+        pipeline: opportunities.filter(o => !['ClosedWon', 'ClosedLost'].includes(o.stage)).reduce((sum, o) => sum + (o.amount || 0), 0),
+        wonValue: opportunities.filter(o => o.stage === 'ClosedWon').reduce((sum, o) => sum + (o.amount || 0), 0)
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">
+                        {isArabic ? 'إدارة علاقات العملاء' : 'CRM'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                        {isArabic ? 'إدارة العملاء المحتملين والفرص والحملات التسويقية' : 'Manage leads, opportunities, and marketing campaigns'}
+                    </p>
+                </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-indigo-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-blue-600">
+                            {isArabic ? 'العملاء المحتملين' : 'Total Leads'}
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-blue-700">{leadStats.total}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-gradient-to-br from-emerald-50 to-green-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">
+                            {isArabic ? 'العملاء الفائزين' : 'Won Leads'}
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-emerald-700">{leadStats.won}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-violet-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-purple-600">
+                            {isArabic ? 'الفرص المفتوحة' : 'Open Opportunities'}
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-purple-700">{opportunityStats.open}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-gradient-to-br from-amber-50 to-orange-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-amber-600">
+                            {isArabic ? 'قيمة خط الأنابيب' : 'Pipeline Value'}
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-amber-700">{formatMoney(opportunityStats.pipeline)}</CardTitle>
+                    </CardHeader>
+                </Card>
+                <Card className="border-none shadow-md bg-gradient-to-br from-rose-50 to-pink-100">
+                    <CardHeader className="pb-2">
+                        <CardDescription className="text-xs font-bold uppercase text-rose-600">
+                            {isArabic ? 'الإيرادات المحققة' : 'Won Revenue'}
+                        </CardDescription>
+                        <CardTitle className="text-2xl font-bold text-rose-700">{formatMoney(opportunityStats.wonValue)}</CardTitle>
+                    </CardHeader>
+                </Card>
+            </div>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                        <TabsTrigger value="leads" className="flex gap-2">
+                            <Users className="h-4 w-4" />
+                            {isArabic ? 'العملاء المحتملين' : 'Leads'}
+                        </TabsTrigger>
+                        <TabsTrigger value="opportunities" className="flex gap-2">
+                            <Target className="h-4 w-4" />
+                            {isArabic ? 'الفرص' : 'Opportunities'}
+                        </TabsTrigger>
+                        <TabsTrigger value="campaigns" className="flex gap-2">
+                            <Megaphone className="h-4 w-4" />
+                            {isArabic ? 'الحملات' : 'Campaigns'}
+                        </TabsTrigger>
+                    </TabsList>
+                    <div className="flex items-center gap-2">
+                        <div className="relative w-full md:w-64">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={dict.common.search + "..."}
+                                className="pl-9"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        {activeTab === 'leads' && (
+                            <Dialog open={isLeadDialogOpen} onOpenChange={setIsLeadDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
+                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'عميل محتمل جديد' : 'New Lead'}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>{isArabic ? 'إضافة عميل محتمل جديد' : 'Add New Lead'}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid grid-cols-2 gap-4 py-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>{isArabic ? 'اسم جهة الاتصال' : 'Contact Name'} *</Label>
+                                            <Input
+                                                value={newLead.contact_name}
+                                                onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'اسم الشركة' : 'Company Name'}</Label>
+                                            <Input
+                                                value={newLead.company_name}
+                                                onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'الصناعة' : 'Industry'}</Label>
+                                            <Input
+                                                value={newLead.industry}
+                                                onChange={(e) => setNewLead({ ...newLead, industry: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'البريد الإلكتروني' : 'Email'}</Label>
+                                            <Input
+                                                type="email"
+                                                value={newLead.email}
+                                                onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'الهاتف' : 'Phone'}</Label>
+                                            <Input
+                                                value={newLead.phone}
+                                                onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'المصدر' : 'Source'}</Label>
+                                            <Select
+                                                value={newLead.source}
+                                                onValueChange={(v) => setNewLead({ ...newLead, source: v })}
+                                            >
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Website">Website</SelectItem>
+                                                    <SelectItem value="Referral">Referral</SelectItem>
+                                                    <SelectItem value="SocialMedia">Social Media</SelectItem>
+                                                    <SelectItem value="Exhibition">Exhibition</SelectItem>
+                                                    <SelectItem value="Advertising">Advertising</SelectItem>
+                                                    <SelectItem value="ColdCall">Cold Call</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'الأولوية' : 'Priority'}</Label>
+                                            <Select
+                                                value={newLead.priority}
+                                                onValueChange={(v) => setNewLead({ ...newLead, priority: v })}
+                                            >
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Low">Low</SelectItem>
+                                                    <SelectItem value="Medium">Medium</SelectItem>
+                                                    <SelectItem value="High">High</SelectItem>
+                                                    <SelectItem value="Urgent">Urgent</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'القيمة المتوقعة' : 'Estimated Value'}</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.001"
+                                                value={newLead.estimated_value}
+                                                onChange={(e) => setNewLead({ ...newLead, estimated_value: Number(e.target.value) })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'تاريخ الإغلاق المتوقع' : 'Expected Close Date'}</Label>
+                                            <Input
+                                                type="date"
+                                                value={newLead.expected_close_date}
+                                                onChange={(e) => setNewLead({ ...newLead, expected_close_date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>{isArabic ? 'ملاحظات' : 'Notes'}</Label>
+                                            <Textarea
+                                                value={newLead.notes}
+                                                onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsLeadDialogOpen(false)}>{dict.common.cancel}</Button>
+                                        <Button onClick={handleCreateLead}>{isArabic ? 'إضافة العميل المحتمل' : 'Add Lead'}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                        {activeTab === 'opportunities' && (
+                            <Dialog open={isOpportunityDialogOpen} onOpenChange={setIsOpportunityDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
+                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'فرصة جديدة' : 'New Opportunity'}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-xl">
+                                    <DialogHeader>
+                                        <DialogTitle>{isArabic ? 'إضافة فرصة جديدة' : 'Add New Opportunity'}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid grid-cols-2 gap-4 py-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>{isArabic ? 'اسم الفرصة' : 'Opportunity Name'} *</Label>
+                                            <Input
+                                                value={newOpportunity.name}
+                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'المرحلة' : 'Stage'}</Label>
+                                            <Select
+                                                value={newOpportunity.stage}
+                                                onValueChange={(v) => setNewOpportunity({
+                                                    ...newOpportunity,
+                                                    stage: v,
+                                                    probability: opportunityStageConfig[v]?.probability || 0
+                                                })}
+                                            >
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Prospecting">Prospecting</SelectItem>
+                                                    <SelectItem value="Qualification">Qualification</SelectItem>
+                                                    <SelectItem value="Proposal">Proposal</SelectItem>
+                                                    <SelectItem value="Negotiation">Negotiation</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'الاحتمالية %' : 'Probability %'}</Label>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={newOpportunity.probability}
+                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, probability: Number(e.target.value) })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'المبلغ' : 'Amount'}</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.001"
+                                                value={newOpportunity.amount}
+                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, amount: Number(e.target.value) })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'تاريخ الإغلاق المتوقع' : 'Expected Close'}</Label>
+                                            <Input
+                                                type="date"
+                                                value={newOpportunity.expected_close_date}
+                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, expected_close_date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>{isArabic ? 'ملاحظات' : 'Notes'}</Label>
+                                            <Textarea
+                                                value={newOpportunity.notes}
+                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, notes: e.target.value })}
+                                                rows={2}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsOpportunityDialogOpen(false)}>{dict.common.cancel}</Button>
+                                        <Button onClick={handleCreateOpportunity}>{isArabic ? 'إضافة الفرصة' : 'Add Opportunity'}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                        {activeTab === 'campaigns' && (
+                            <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-lg">
+                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'حملة جديدة' : 'New Campaign'}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-xl">
+                                    <DialogHeader>
+                                        <DialogTitle>{isArabic ? 'إنشاء حملة جديدة' : 'Create New Campaign'}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid grid-cols-2 gap-4 py-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label>{isArabic ? 'اسم الحملة' : 'Campaign Name'} *</Label>
+                                            <Input
+                                                value={newCampaign.name}
+                                                onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'النوع' : 'Type'}</Label>
+                                            <Select
+                                                value={newCampaign.type}
+                                                onValueChange={(v) => setNewCampaign({ ...newCampaign, type: v })}
+                                            >
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Email">Email</SelectItem>
+                                                    <SelectItem value="Social">Social Media</SelectItem>
+                                                    <SelectItem value="Event">Event</SelectItem>
+                                                    <SelectItem value="Webinar">Webinar</SelectItem>
+                                                    <SelectItem value="Print">Print</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'الميزانية' : 'Budget'}</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.001"
+                                                value={newCampaign.budget}
+                                                onChange={(e) => setNewCampaign({ ...newCampaign, budget: Number(e.target.value) })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'تاريخ البدء' : 'Start Date'}</Label>
+                                            <Input
+                                                type="date"
+                                                value={newCampaign.start_date}
+                                                onChange={(e) => setNewCampaign({ ...newCampaign, start_date: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>{isArabic ? 'تاريخ الانتهاء' : 'End Date'}</Label>
+                                            <Input
+                                                type="date"
+                                                value={newCampaign.end_date}
+                                                onChange={(e) => setNewCampaign({ ...newCampaign, end_date: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsCampaignDialogOpen(false)}>{dict.common.cancel}</Button>
+                                        <Button onClick={handleCreateCampaign}>{isArabic ? 'إنشاء الحملة' : 'Create Campaign'}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </div>
+                </div>
+
+                {/* Leads Tab */}
+                <TabsContent value="leads">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-slate-50/20">
+                                            <TableHead className="pl-6">{isArabic ? 'جهة الاتصال' : 'Contact'}</TableHead>
+                                            <TableHead>{isArabic ? 'الشركة' : 'Company'}</TableHead>
+                                            <TableHead>{isArabic ? 'المصدر' : 'Source'}</TableHead>
+                                            <TableHead>{isArabic ? 'الحالة' : 'Status'}</TableHead>
+                                            <TableHead>{isArabic ? 'الأولوية' : 'Priority'}</TableHead>
+                                            <TableHead className="text-right">{isArabic ? 'القيمة' : 'Value'}</TableHead>
+                                            <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell>
+                                            </TableRow>
+                                        ) : filteredLeads.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
+                                                    {isArabic ? 'لا يوجد عملاء محتملين' : 'No leads found'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : filteredLeads.map(lead => (
+                                            <TableRow key={lead.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                <TableCell className="pl-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{lead.contact_name}</span>
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                            {lead.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {lead.email}</span>}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {lead.company_name && (
+                                                        <div className="flex items-center gap-1">
+                                                            <Building2 className="h-4 w-4 text-slate-400" />
+                                                            {lead.company_name}
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline">{lead.source || '-'}</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge className={`${leadStatusConfig[lead.status]?.color || ''} border-none`}>
+                                                        {leadStatusConfig[lead.status]?.label || lead.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge className={`${priorityConfig[lead.priority]?.color || ''} border-none`}>
+                                                        {priorityConfig[lead.priority]?.label || lead.priority}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono font-bold">
+                                                    {lead.estimated_value ? formatMoney(lead.estimated_value) : '-'}
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-48">
+                                                            <DropdownMenuLabel>{isArabic ? 'العمليات' : 'Actions'}</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuLabel className="text-xs text-muted-foreground">{isArabic ? 'تحديث الحالة' : 'Update Status'}</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => handleUpdateLeadStatus(lead, 'Contacted')}>
+                                                                {isArabic ? 'تم التواصل' : 'Contacted'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleUpdateLeadStatus(lead, 'Qualified')}>
+                                                                {isArabic ? 'مؤهل' : 'Qualified'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleUpdateLeadStatus(lead, 'Proposal')}>
+                                                                {isArabic ? 'عرض سعر' : 'Proposal'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            {lead.status !== 'Won' && (
+                                                                <DropdownMenuItem onClick={() => handleConvertToCustomer(lead)} className="text-emerald-600 font-bold">
+                                                                    <UserCheck className="h-4 w-4 mr-2" /> {isArabic ? 'تحويل لعميل' : 'Convert to Customer'}
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuItem onClick={() => handleUpdateLeadStatus(lead, 'Lost')} className="text-rose-600">
+                                                                <UserX className="h-4 w-4 mr-2" /> {isArabic ? 'خسارة' : 'Mark as Lost'}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteLead(lead.id)}>
+                                                                <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Opportunities Tab */}
+                <TabsContent value="opportunities">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden">
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-slate-50/20">
+                                            <TableHead className="pl-6">{isArabic ? 'الفرصة' : 'Opportunity'}</TableHead>
+                                            <TableHead>{isArabic ? 'العميل' : 'Customer'}</TableHead>
+                                            <TableHead>{isArabic ? 'المرحلة' : 'Stage'}</TableHead>
+                                            <TableHead>{isArabic ? 'الاحتمالية' : 'Probability'}</TableHead>
+                                            <TableHead className="text-right">{isArabic ? 'المبلغ' : 'Amount'}</TableHead>
+                                            <TableHead>{isArabic ? 'الإغلاق المتوقع' : 'Expected Close'}</TableHead>
+                                            <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell>
+                                            </TableRow>
+                                        ) : filteredOpportunities.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
+                                                    {isArabic ? 'لا توجد فرص' : 'No opportunities found'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : filteredOpportunities.map(opportunity => (
+                                            <TableRow key={opportunity.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                <TableCell className="pl-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{opportunity.name}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono">{opportunity.opportunity_number}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{opportunity.customers?.name || '-'}</TableCell>
+                                                <TableCell>
+                                                    <Badge className={`${opportunityStageConfig[opportunity.stage]?.color || ''} border-none`}>
+                                                        {opportunityStageConfig[opportunity.stage]?.label || opportunity.stage}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
+                                                                style={{ width: `${opportunity.probability}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-sm font-bold">{opportunity.probability}%</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono font-bold">
+                                                    {opportunity.amount ? formatMoney(opportunity.amount) : '-'}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {opportunity.expected_close_date ? format(new Date(opportunity.expected_close_date), 'MMM dd, yyyy') : '-'}
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-48">
+                                                            <DropdownMenuLabel>{isArabic ? 'تحديث المرحلة' : 'Update Stage'}</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Qualification')}>
+                                                                Qualification
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Proposal')}>
+                                                                Proposal
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Negotiation')}>
+                                                                Negotiation
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedWon')} className="text-emerald-600 font-bold">
+                                                                <TrendingUp className="h-4 w-4 mr-2" /> Closed Won
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedLost')} className="text-rose-600">
+                                                                Closed Lost
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteOpportunity(opportunity.id)}>
+                                                                <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Campaigns Tab */}
+                <TabsContent value="campaigns">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {loading ? (
+                            <Card className="col-span-full border-none shadow-md">
+                                <CardContent className="py-20 text-center text-muted-foreground">
+                                    {dict.common.loading}
+                                </CardContent>
+                            </Card>
+                        ) : campaigns.length === 0 ? (
+                            <Card className="col-span-full border-none shadow-md">
+                                <CardContent className="py-20 text-center text-muted-foreground">
+                                    {isArabic ? 'لا توجد حملات' : 'No campaigns found'}
+                                </CardContent>
+                            </Card>
+                        ) : campaigns.map(campaign => (
+                            <Card key={campaign.id} className="border-none shadow-md hover:shadow-lg transition-shadow">
+                                <CardHeader className="pb-2">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                                            <CardDescription className="text-xs font-mono">{campaign.campaign_code}</CardDescription>
+                                        </div>
+                                        <Badge variant="outline" className={
+                                            campaign.status === 'Active' ? 'bg-emerald-50 text-emerald-700' :
+                                                campaign.status === 'Planning' ? 'bg-blue-50 text-blue-700' :
+                                                    campaign.status === 'Completed' ? 'bg-slate-50 text-slate-700' :
+                                                        'bg-amber-50 text-amber-700'
+                                        }>
+                                            {campaign.status}
+                                        </Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Megaphone className="h-4 w-4" />
+                                        <span>{campaign.type}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Calendar className="h-4 w-4" />
+                                        <span>
+                                            {campaign.start_date ? format(new Date(campaign.start_date), 'MMM dd') : '-'}
+                                            {' → '}
+                                            {campaign.end_date ? format(new Date(campaign.end_date), 'MMM dd, yyyy') : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                                        <div>
+                                            <span className="text-xs text-muted-foreground">{isArabic ? 'الميزانية' : 'Budget'}</span>
+                                            <p className="font-bold">{campaign.budget ? formatMoney(campaign.budget) : '-'}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs text-muted-foreground">{isArabic ? 'التكلفة الفعلية' : 'Actual Cost'}</span>
+                                            <p className="font-bold">{campaign.actual_cost ? formatMoney(campaign.actual_cost) : '-'}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+}
