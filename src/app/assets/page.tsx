@@ -566,297 +566,297 @@ export default function AssetsPage() {
                         <Wrench className="h-4 w-4" />
                         {isArabic ? 'الصيانة' : 'Maintenance'}
                     </TabsTrigger>
-            </Tabs>
+                </TabsList>
 
-            {/* Assets Tab */}
-            <TabsContent value="assets">
-                <Card className="border-none shadow-xl bg-white overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 border-b">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="relative w-full md:w-80">
-                                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder={isArabic ? 'بحث في الأصول...' : 'Search assets...'}
-                                    className="pl-9 bg-white"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
+                {/* Assets Tab */}
+                <TabsContent value="assets">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden">
+                        <CardHeader className="bg-slate-50/50 border-b">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="relative w-full md:w-80">
+                                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder={isArabic ? 'بحث في الأصول...' : 'Search assets...'}
+                                        className="pl-9 bg-white"
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Select value={filterCategory} onValueChange={setFilterCategory}>
+                                        <SelectTrigger className="w-[150px] bg-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">{isArabic ? 'كل الفئات' : 'All Categories'}</SelectItem>
+                                            {categories.map(cat => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                                        <SelectTrigger className="w-[140px] bg-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">{isArabic ? 'كل الحالات' : 'All Status'}</SelectItem>
+                                            <SelectItem value="Active">Active</SelectItem>
+                                            <SelectItem value="UnderMaintenance">Under Maintenance</SelectItem>
+                                            <SelectItem value="Disposed">Disposed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Select value={filterCategory} onValueChange={setFilterCategory}>
-                                    <SelectTrigger className="w-[150px] bg-white">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{isArabic ? 'كل الفئات' : 'All Categories'}</SelectItem>
-                                        {categories.map(cat => (
-                                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                    <SelectTrigger className="w-[140px] bg-white">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">{isArabic ? 'كل الحالات' : 'All Status'}</SelectItem>
-                                        <SelectItem value="Active">Active</SelectItem>
-                                        <SelectItem value="UnderMaintenance">Under Maintenance</SelectItem>
-                                        <SelectItem value="Disposed">Disposed</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-slate-50/20">
-                                        <TableHead className="pl-6">{isArabic ? 'الأصل' : 'Asset'}</TableHead>
-                                        <TableHead>{isArabic ? 'الفئة' : 'Category'}</TableHead>
-                                        <TableHead>{isArabic ? 'الحالة' : 'Status'}</TableHead>
-                                        <TableHead className="text-right">{isArabic ? 'سعر الشراء' : 'Purchase Price'}</TableHead>
-                                        <TableHead className="text-right">{isArabic ? 'القيمة الحالية' : 'Current Value'}</TableHead>
-                                        <TableHead>{isArabic ? 'الموقع' : 'Location'}</TableHead>
-                                        <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-slate-50/20">
+                                            <TableHead className="pl-6">{isArabic ? 'الأصل' : 'Asset'}</TableHead>
+                                            <TableHead>{isArabic ? 'الفئة' : 'Category'}</TableHead>
+                                            <TableHead>{isArabic ? 'الحالة' : 'Status'}</TableHead>
+                                            <TableHead className="text-right">{isArabic ? 'سعر الشراء' : 'Purchase Price'}</TableHead>
+                                            <TableHead className="text-right">{isArabic ? 'القيمة الحالية' : 'Current Value'}</TableHead>
+                                            <TableHead>{isArabic ? 'الموقع' : 'Location'}</TableHead>
+                                            <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
                                         </TableRow>
-                                    ) : filteredAssets.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
-                                                {isArabic ? 'لا توجد أصول' : 'No assets found'}
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : filteredAssets.map(asset => {
-                                        const statusInfo = statusConfig[asset.status] || statusConfig.Active
-                                        const StatusIcon = statusInfo.icon
-                                        const CategoryIcon = categoryIcons[asset.asset_categories?.code || ''] || Package
-                                        const depreciation = calculateDepreciation(asset)
-                                        const currentValue = asset.purchase_price - depreciation
-
-                                        return (
-                                            <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                <TableCell className="pl-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                                            <CategoryIcon className="h-5 w-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold">{asset.name}</span>
-                                                            <span className="text-xs text-muted-foreground font-mono">{asset.asset_number}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">{asset.asset_categories?.name || '-'}</Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge className={`${statusInfo.color} border-none gap-1`}>
-                                                        <StatusIcon className="h-3 w-3" />
-                                                        {statusInfo.label}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono">
-                                                    {formatMoney(asset.purchase_price)}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end">
-                                                        <span className="font-mono font-bold">{formatMoney(currentValue)}</span>
-                                                        {depreciation > 0 && (
-                                                            <span className="text-xs text-rose-500">-{formatMoney(depreciation)}</span>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>{asset.location || '-'}</TableCell>
-                                                <TableCell className="text-right pr-6">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-48">
-                                                            <DropdownMenuLabel>{isArabic ? 'العمليات' : 'Actions'}</DropdownMenuLabel>
-                                                            <DropdownMenuItem onClick={() => {
-                                                                setSelectedAssetForMaintenance(asset)
-                                                                setIsMaintenanceDialogOpen(true)
-                                                            }}>
-                                                                <Wrench className="h-4 w-4 mr-2" /> {isArabic ? 'إضافة صيانة' : 'Add Maintenance'}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuLabel className="text-xs text-muted-foreground">{isArabic ? 'تحديث الحالة' : 'Update Status'}</DropdownMenuLabel>
-                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'Active')}>
-                                                                <CheckCircle2 className="h-4 w-4 mr-2" /> Active
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'UnderMaintenance')}>
-                                                                <Wrench className="h-4 w-4 mr-2" /> Under Maintenance
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'Disposed')}>
-                                                                <Trash2 className="h-4 w-4 mr-2" /> Disposed
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem className="text-rose-600" onClick={() => handleDelete(asset.id)}>
-                                                                <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell>
+                                            </TableRow>
+                                        ) : filteredAssets.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
+                                                    {isArabic ? 'لا توجد أصول' : 'No assets found'}
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
+                                        ) : filteredAssets.map(asset => {
+                                            const statusInfo = statusConfig[asset.status] || statusConfig.Active
+                                            const StatusIcon = statusInfo.icon
+                                            const CategoryIcon = categoryIcons[asset.asset_categories?.code || ''] || Package
+                                            const depreciation = calculateDepreciation(asset)
+                                            const currentValue = asset.purchase_price - depreciation
 
-            {/* Maintenance Tab */}
-            <TabsContent value="maintenance">
-                <Card className="border-none shadow-xl bg-white overflow-hidden">
-                    <CardHeader>
-                        <CardTitle>{isArabic ? 'سجل الصيانة' : 'Maintenance History'}</CardTitle>
-                        <CardDescription>{isArabic ? 'جميع عمليات الصيانة المسجلة' : 'All recorded maintenance activities'}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-slate-50/20">
-                                        <TableHead className="pl-6">{isArabic ? 'الأصل' : 'Asset'}</TableHead>
-                                        <TableHead>{isArabic ? 'النوع' : 'Type'}</TableHead>
-                                        <TableHead>{isArabic ? 'التاريخ' : 'Date'}</TableHead>
-                                        <TableHead>{isArabic ? 'الوصف' : 'Description'}</TableHead>
-                                        <TableHead className="text-right">{isArabic ? 'التكلفة' : 'Cost'}</TableHead>
-                                        <TableHead>{isArabic ? 'الصيانة القادمة' : 'Next Maintenance'}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-20">{dict.common.loading}</TableCell>
+                                            return (
+                                                <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors">
+                                                    <TableCell className="pl-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                                                <CategoryIcon className="h-5 w-5 text-indigo-600" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold">{asset.name}</span>
+                                                                <span className="text-xs text-muted-foreground font-mono">{asset.asset_number}</span>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{asset.asset_categories?.name || '-'}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className={`${statusInfo.color} border-none gap-1`}>
+                                                            <StatusIcon className="h-3 w-3" />
+                                                            {statusInfo.label}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-mono">
+                                                        {formatMoney(asset.purchase_price)}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-mono font-bold">{formatMoney(currentValue)}</span>
+                                                            {depreciation > 0 && (
+                                                                <span className="text-xs text-rose-500">-{formatMoney(depreciation)}</span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{asset.location || '-'}</TableCell>
+                                                    <TableCell className="text-right pr-6">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-48">
+                                                                <DropdownMenuLabel>{isArabic ? 'العمليات' : 'Actions'}</DropdownMenuLabel>
+                                                                <DropdownMenuItem onClick={() => {
+                                                                    setSelectedAssetForMaintenance(asset)
+                                                                    setIsMaintenanceDialogOpen(true)
+                                                                }}>
+                                                                    <Wrench className="h-4 w-4 mr-2" /> {isArabic ? 'إضافة صيانة' : 'Add Maintenance'}
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuLabel className="text-xs text-muted-foreground">{isArabic ? 'تحديث الحالة' : 'Update Status'}</DropdownMenuLabel>
+                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'Active')}>
+                                                                    <CheckCircle2 className="h-4 w-4 mr-2" /> Active
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'UnderMaintenance')}>
+                                                                    <Wrench className="h-4 w-4 mr-2" /> Under Maintenance
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleUpdateStatus(asset, 'Disposed')}>
+                                                                    <Trash2 className="h-4 w-4 mr-2" /> Disposed
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem className="text-rose-600" onClick={() => handleDelete(asset.id)}>
+                                                                    <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Maintenance Tab */}
+                <TabsContent value="maintenance">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden">
+                        <CardHeader>
+                            <CardTitle>{isArabic ? 'سجل الصيانة' : 'Maintenance History'}</CardTitle>
+                            <CardDescription>{isArabic ? 'جميع عمليات الصيانة المسجلة' : 'All recorded maintenance activities'}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-slate-50/20">
+                                            <TableHead className="pl-6">{isArabic ? 'الأصل' : 'Asset'}</TableHead>
+                                            <TableHead>{isArabic ? 'النوع' : 'Type'}</TableHead>
+                                            <TableHead>{isArabic ? 'التاريخ' : 'Date'}</TableHead>
+                                            <TableHead>{isArabic ? 'الوصف' : 'Description'}</TableHead>
+                                            <TableHead className="text-right">{isArabic ? 'التكلفة' : 'Cost'}</TableHead>
+                                            <TableHead>{isArabic ? 'الصيانة القادمة' : 'Next Maintenance'}</TableHead>
                                         </TableRow>
-                                    ) : maintenance.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-20 text-muted-foreground">
-                                                {isArabic ? 'لا توجد سجلات صيانة' : 'No maintenance records'}
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : maintenance.map(m => (
-                                        <TableRow key={m.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <TableCell className="pl-6">
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold">{m.fixed_assets?.name}</span>
-                                                    <span className="text-xs text-muted-foreground font-mono">{m.fixed_assets?.asset_number}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={
-                                                    m.maintenance_type === 'Repair' ? 'bg-rose-50 text-rose-700' :
-                                                        m.maintenance_type === 'Preventive' ? 'bg-blue-50 text-blue-700' :
-                                                            'bg-slate-50 text-slate-700'
-                                                }>
-                                                    {m.maintenance_type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{format(new Date(m.maintenance_date), 'MMM dd, yyyy')}</TableCell>
-                                            <TableCell className="max-w-xs truncate">{m.description || '-'}</TableCell>
-                                            <TableCell className="text-right font-mono font-bold">{formatMoney(m.cost)}</TableCell>
-                                            <TableCell>
-                                                {m.next_maintenance_date ? (
-                                                    <div className="flex items-center gap-1 text-sm">
-                                                        <Calendar className="h-3 w-3 text-amber-500" />
-                                                        {format(new Date(m.next_maintenance_date), 'MMM dd, yyyy')}
+                                    </TableHeader>
+                                    <TableBody>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="text-center py-20">{dict.common.loading}</TableCell>
+                                            </TableRow>
+                                        ) : maintenance.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="text-center py-20 text-muted-foreground">
+                                                    {isArabic ? 'لا توجد سجلات صيانة' : 'No maintenance records'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : maintenance.map(m => (
+                                            <TableRow key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <TableCell className="pl-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{m.fixed_assets?.name}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono">{m.fixed_assets?.asset_number}</span>
                                                     </div>
-                                                ) : '-'}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={
+                                                        m.maintenance_type === 'Repair' ? 'bg-rose-50 text-rose-700' :
+                                                            m.maintenance_type === 'Preventive' ? 'bg-blue-50 text-blue-700' :
+                                                                'bg-slate-50 text-slate-700'
+                                                    }>
+                                                        {m.maintenance_type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{format(new Date(m.maintenance_date), 'MMM dd, yyyy')}</TableCell>
+                                                <TableCell className="max-w-xs truncate">{m.description || '-'}</TableCell>
+                                                <TableCell className="text-right font-mono font-bold">{formatMoney(m.cost)}</TableCell>
+                                                <TableCell>
+                                                    {m.next_maintenance_date ? (
+                                                        <div className="flex items-center gap-1 text-sm">
+                                                            <Calendar className="h-3 w-3 text-amber-500" />
+                                                            {format(new Date(m.next_maintenance_date), 'MMM dd, yyyy')}
+                                                        </div>
+                                                    ) : '-'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
 
-            {/* Add Maintenance Dialog */ }
-    <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
-        <DialogContent className="max-w-lg">
-            <DialogHeader>
-                <DialogTitle>{isArabic ? 'إضافة صيانة' : 'Add Maintenance Record'}</DialogTitle>
-            </DialogHeader>
-            {selectedAssetForMaintenance && (
-                <div className="space-y-4 py-4">
-                    <div className="p-3 bg-slate-50 rounded-lg">
-                        <span className="text-sm text-muted-foreground">{isArabic ? 'الأصل:' : 'Asset:'}</span>
-                        <p className="font-bold">{selectedAssetForMaintenance.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{selectedAssetForMaintenance.asset_number}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>{isArabic ? 'نوع الصيانة' : 'Maintenance Type'}</Label>
-                            <Select
-                                value={newMaintenance.maintenance_type}
-                                onValueChange={(v) => setNewMaintenance({ ...newMaintenance, maintenance_type: v })}
-                            >
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Preventive">Preventive</SelectItem>
-                                    <SelectItem value="Repair">Repair</SelectItem>
-                                    <SelectItem value="Upgrade">Upgrade</SelectItem>
-                                    <SelectItem value="Inspection">Inspection</SelectItem>
-                                </SelectContent>
-                            </Select>
+            {/* Add Maintenance Dialog */}
+            <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{isArabic ? 'إضافة صيانة' : 'Add Maintenance Record'}</DialogTitle>
+                    </DialogHeader>
+                    {selectedAssetForMaintenance && (
+                        <div className="space-y-4 py-4">
+                            <div className="p-3 bg-slate-50 rounded-lg">
+                                <span className="text-sm text-muted-foreground">{isArabic ? 'الأصل:' : 'Asset:'}</span>
+                                <p className="font-bold">{selectedAssetForMaintenance.name}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{selectedAssetForMaintenance.asset_number}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>{isArabic ? 'نوع الصيانة' : 'Maintenance Type'}</Label>
+                                    <Select
+                                        value={newMaintenance.maintenance_type}
+                                        onValueChange={(v) => setNewMaintenance({ ...newMaintenance, maintenance_type: v })}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Preventive">Preventive</SelectItem>
+                                            <SelectItem value="Repair">Repair</SelectItem>
+                                            <SelectItem value="Upgrade">Upgrade</SelectItem>
+                                            <SelectItem value="Inspection">Inspection</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{isArabic ? 'التاريخ' : 'Date'}</Label>
+                                    <Input
+                                        type="date"
+                                        value={newMaintenance.maintenance_date}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, maintenance_date: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{isArabic ? 'التكلفة' : 'Cost'}</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.001"
+                                        value={newMaintenance.cost}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, cost: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{isArabic ? 'الصيانة القادمة' : 'Next Maintenance'}</Label>
+                                    <Input
+                                        type="date"
+                                        value={newMaintenance.next_maintenance_date}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, next_maintenance_date: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2 col-span-2">
+                                    <Label>{isArabic ? 'الوصف' : 'Description'}</Label>
+                                    <Textarea
+                                        value={newMaintenance.description}
+                                        onChange={(e) => setNewMaintenance({ ...newMaintenance, description: e.target.value })}
+                                        rows={2}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>{isArabic ? 'التاريخ' : 'Date'}</Label>
-                            <Input
-                                type="date"
-                                value={newMaintenance.maintenance_date}
-                                onChange={(e) => setNewMaintenance({ ...newMaintenance, maintenance_date: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>{isArabic ? 'التكلفة' : 'Cost'}</Label>
-                            <Input
-                                type="number"
-                                step="0.001"
-                                value={newMaintenance.cost}
-                                onChange={(e) => setNewMaintenance({ ...newMaintenance, cost: Number(e.target.value) })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>{isArabic ? 'الصيانة القادمة' : 'Next Maintenance'}</Label>
-                            <Input
-                                type="date"
-                                value={newMaintenance.next_maintenance_date}
-                                onChange={(e) => setNewMaintenance({ ...newMaintenance, next_maintenance_date: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2 col-span-2">
-                            <Label>{isArabic ? 'الوصف' : 'Description'}</Label>
-                            <Textarea
-                                value={newMaintenance.description}
-                                onChange={(e) => setNewMaintenance({ ...newMaintenance, description: e.target.value })}
-                                rows={2}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)}>{dict.common.cancel}</Button>
-                <Button onClick={handleAddMaintenance}>{isArabic ? 'حفظ' : 'Save'}</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleAddMaintenance}>{isArabic ? 'حفظ' : 'Save'}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div >
     )
 }
