@@ -432,20 +432,21 @@ CREATE TABLE IF NOT EXISTS fiscal_years (
 );
 
 -- Budgets
+-- Budgets
 CREATE TABLE IF NOT EXISTS budgets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    fiscal_year_id UUID REFERENCES fiscal_years(id),
+    budget_code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    budget_type VARCHAR(30) CHECK (budget_type IN ('Operating', 'Capital', 'Project', 'Department')),
-    department_id UUID REFERENCES departments(id),
-    account_id UUID,
-    period_type VARCHAR(20) DEFAULT 'Monthly' CHECK (period_type IN ('Monthly', 'Quarterly', 'Annually')),
+    description TEXT,
+    fiscal_year INTEGER NOT NULL,
+    period_type VARCHAR(20) DEFAULT 'Annual' CHECK (period_type IN ('Annual', 'Quarterly', 'Monthly')),
     total_amount DECIMAL(15,3) NOT NULL,
-    notes TEXT,
+    spent_amount DECIMAL(15,3) DEFAULT 0,
+    remaining_amount DECIMAL(15,3) DEFAULT 0,
     status VARCHAR(20) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Approved', 'Active', 'Closed')),
-    approved_by UUID REFERENCES profiles(id),
-    approved_at TIMESTAMPTZ,
-    created_by UUID REFERENCES profiles(id),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    department_id UUID REFERENCES departments(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -694,54 +695,33 @@ CREATE TABLE IF NOT EXISTS pay_periods (
 );
 
 -- Payroll Runs
+-- Payroll Runs
 CREATE TABLE IF NOT EXISTS payroll_runs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    run_number VARCHAR(50) UNIQUE NOT NULL,
-    pay_period_id UUID REFERENCES pay_periods(id),
-    run_date DATE NOT NULL,
-    status VARCHAR(20) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Calculated', 'Approved', 'Paid', 'Cancelled')),
+    payroll_code VARCHAR(50) UNIQUE NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    pay_date DATE,
+    status VARCHAR(20) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Processing', 'Approved', 'Paid', 'Cancelled')),
     total_gross DECIMAL(15,3) DEFAULT 0,
     total_deductions DECIMAL(15,3) DEFAULT 0,
     total_net DECIMAL(15,3) DEFAULT 0,
     employee_count INTEGER DEFAULT 0,
     notes TEXT,
-    calculated_by UUID REFERENCES profiles(id),
-    approved_by UUID REFERENCES profiles(id),
-    approved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Payslips
-CREATE TABLE IF NOT EXISTS payslips (
+-- Payroll Items (Payslips)
+CREATE TABLE IF NOT EXISTS payroll_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    payslip_number VARCHAR(50) UNIQUE NOT NULL,
-    payroll_run_id UUID REFERENCES payroll_runs(id),
+    payroll_run_id UUID REFERENCES payroll_runs(id) ON DELETE CASCADE,
     employee_id UUID REFERENCES employees(id),
-    pay_period_id UUID REFERENCES pay_periods(id),
     basic_salary DECIMAL(15,3) NOT NULL,
-    gross_salary DECIMAL(15,3) NOT NULL,
+    total_earnings DECIMAL(15,3) NOT NULL,
     total_deductions DECIMAL(15,3) DEFAULT 0,
-    net_salary DECIMAL(15,3) NOT NULL,
-    working_days INTEGER,
-    days_worked INTEGER,
-    overtime_hours DECIMAL(10,2) DEFAULT 0,
-    overtime_amount DECIMAL(15,3) DEFAULT 0,
-    leave_deduction DECIMAL(15,3) DEFAULT 0,
-    status VARCHAR(20) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Finalized', 'Paid')),
-    payment_date DATE,
-    payment_reference VARCHAR(100),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Payslip Details
-CREATE TABLE IF NOT EXISTS payslip_details (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    payslip_id UUID REFERENCES payslips(id) ON DELETE CASCADE,
-    component_id UUID REFERENCES salary_components(id),
-    component_name VARCHAR(255),
-    component_type VARCHAR(20),
-    amount DECIMAL(15,3) NOT NULL,
+    net_pay DECIMAL(15,3) NOT NULL,
+    payment_status VARCHAR(20) DEFAULT 'Pending' CHECK (payment_status IN ('Pending', 'Paid', 'OnHold')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -770,92 +750,35 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Bank Statements
-CREATE TABLE IF NOT EXISTS bank_statements (
+-- Bank Reconciliations (matches code usage)
+CREATE TABLE IF NOT EXISTS bank_reconciliations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     bank_account_id UUID REFERENCES bank_accounts(id),
-    statement_number VARCHAR(100),
     statement_date DATE NOT NULL,
-    period_start DATE NOT NULL,
-    period_end DATE NOT NULL,
-    opening_balance DECIMAL(15,3) NOT NULL,
-    closing_balance DECIMAL(15,3) NOT NULL,
-    total_deposits DECIMAL(15,3) DEFAULT 0,
-    total_withdrawals DECIMAL(15,3) DEFAULT 0,
-    file_url VARCHAR(500),
-    status VARCHAR(20) DEFAULT 'Imported' CHECK (status IN ('Imported', 'InProgress', 'Reconciled')),
-    imported_at TIMESTAMPTZ DEFAULT NOW(),
-    reconciled_at TIMESTAMPTZ,
-    reconciled_by UUID REFERENCES profiles(id)
+    statement_ending_balance DECIMAL(15,3) DEFAULT 0,
+    book_balance DECIMAL(15,3) DEFAULT 0,
+    difference DECIMAL(15,3) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'Draft' CHECK (status IN ('Draft', 'Reconciled', 'Archived')),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Bank Statement Lines
+-- Bank Statement Lines (matches code usage)
 CREATE TABLE IF NOT EXISTS bank_statement_lines (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    statement_id UUID REFERENCES bank_statements(id) ON DELETE CASCADE,
+    reconciliation_id UUID REFERENCES bank_reconciliations(id) ON DELETE CASCADE,
     transaction_date DATE NOT NULL,
-    value_date DATE,
     description TEXT,
     reference VARCHAR(255),
     debit_amount DECIMAL(15,3) DEFAULT 0,
     credit_amount DECIMAL(15,3) DEFAULT 0,
-    balance DECIMAL(15,3),
-    transaction_type VARCHAR(50),
+    transaction_type VARCHAR(50), -- Deposit, Withdrawal, etc.
     is_matched BOOLEAN DEFAULT false,
-    matched_transaction_id UUID,
-    matched_transaction_type VARCHAR(50), -- 'invoice', 'bill', 'payment', 'journal'
-    notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Reconciliation Sessions
-CREATE TABLE IF NOT EXISTS reconciliations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    bank_account_id UUID REFERENCES bank_accounts(id),
-    statement_id UUID REFERENCES bank_statements(id),
-    reconciliation_date DATE NOT NULL,
-    statement_ending_balance DECIMAL(15,3) NOT NULL,
-    book_balance DECIMAL(15,3) NOT NULL,
-    reconciled_balance DECIMAL(15,3),
-    difference DECIMAL(15,3),
-    status VARCHAR(20) DEFAULT 'InProgress' CHECK (status IN ('InProgress', 'Completed', 'Discrepancy')),
-    notes TEXT,
-    completed_by UUID REFERENCES profiles(id),
-    completed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
--- =============================================
--- AUDIT LOG MODULE
--- =============================================
-
--- Comprehensive Audit Log
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES profiles(id),
-    user_email VARCHAR(255),
-    user_name VARCHAR(255),
-    action VARCHAR(50) NOT NULL CHECK (action IN ('CREATE', 'READ', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT', 'APPROVE', 'REJECT', 'PRINT')),
-    module VARCHAR(100) NOT NULL,
-    table_name VARCHAR(100),
-    record_id UUID,
-    record_identifier VARCHAR(255), -- Human readable identifier like invoice number
-    old_values JSONB,
-    new_values JSONB,
-    changed_fields TEXT[],
-    ip_address VARCHAR(50),
-    user_agent TEXT,
-    session_id VARCHAR(255),
-    additional_info JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Create index for faster audit log queries
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_module ON audit_logs(module);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_table_record ON audit_logs(table_name, record_id);
 
 -- =============================================
 -- PAYMENT GATEWAY CONFIGURATION
@@ -1097,3 +1020,22 @@ INSERT INTO invoice_templates (name, template_code, is_default, html_content) VA
 ON CONFLICT (template_code) DO NOTHING;
 
 COMMIT;
+
+-- =============================================
+-- SYSTEM & AUDIT LOGS
+-- =============================================
+
+-- Audit Logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    table_name VARCHAR(100) NOT NULL,
+    record_id VARCHAR(100) NOT NULL,
+    action VARCHAR(20) CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'PRINT', 'VIEW')),
+    old_values JSONB,
+    new_values JSONB,
+    changed_fields TEXT[],
+    user_id UUID REFERENCES profiles(id),
+    ip_address VARCHAR(50),
+    user_agent VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
