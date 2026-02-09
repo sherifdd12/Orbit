@@ -358,10 +358,10 @@ export default function BankReconciliationPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {isArabic ? 'مطابقة البنك' : 'Bank Reconciliation'}
+                        {dict.finance.bank}
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        {isArabic ? 'مطابقة كشوف الحسابات البنكية مع السجلات الداخلية' : 'Match bank statements with internal records'}
+                        {isArabic ? 'إجراء التسويات البنكية ومطابقة الحسابات' : 'Match bank statements with internal records'}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

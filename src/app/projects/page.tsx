@@ -193,7 +193,9 @@ export default function ProjectsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-4xl font-black tracking-tight text-slate-900">{dict.projects.title}</h2>
-                    <p className="text-slate-500 font-medium mt-1">Orchestrate your operations, milestones, and deliverable outcomes.</p>
+                    <p className="text-slate-500 font-medium mt-1">
+                        {locale === 'ar' ? 'قم بتنظيم عملياتك، مراحل الإنجاز، والنتائج النهائية لمشاريعك.' : 'Orchestrate your operations, milestones, and deliverable outcomes.'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button variant="outline" className="gap-2" onClick={() => handleActionPlaceholder('Filters')}>
@@ -207,11 +209,11 @@ export default function ProjectsPage() {
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogTrigger asChild>
                             <Button className="h-11 px-6 bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-700 hover:to-violet-800 shadow-xl shadow-indigo-100 border-none transition-all hover:scale-[1.02]">
-                                <Plus className="mr-2 h-4 w-4" /> Initialize Project
+                                <Plus className="mr-2 h-4 w-4" /> {dict.projects.initializeProject}
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
-                            <DialogHeader><DialogTitle className="text-2xl font-bold">New Project Scope</DialogTitle></DialogHeader>
+                            <DialogHeader><DialogTitle className="text-2xl font-bold">{dict.projects.projectScope}</DialogTitle></DialogHeader>
                             <div className="grid grid-cols-2 gap-6 py-6">
                                 <div className="space-y-2 col-span-2">
                                     <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Project Title</Label>
@@ -258,30 +260,34 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="border-none shadow-md bg-white border-l-4 border-l-indigo-500">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Yield Pipeline</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">{dict.projects.yieldPipeline}</CardDescription>
                         <CardTitle className="text-3xl font-black text-slate-800">{currency} {projects.reduce((acc, p) => acc + (p.budget || 0), 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-full">
-                            <TrendingUp className="h-3 w-3" /> 12% increase from Q3
+                            <TrendingUp className="h-3 w-3" /> {locale === 'ar' ? 'زيادة بنسبة 12% عن الربع الثالث' : '12% increase from Q3'}
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="border-none shadow-md bg-white border-l-4 border-l-emerald-500">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Operational Rate</CardDescription>
-                        <CardTitle className="text-3xl font-black text-slate-800">{projects.filter(p => p.status === 'Active').length} Active Jobs</CardTitle>
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">{dict.projects.operationalRate}</CardDescription>
+                        <CardTitle className="text-3xl font-black text-slate-800">
+                            {projects.filter(p => p.status === 'Active').length} {locale === 'ar' ? 'مشاريع نشطة' : 'Active Jobs'}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                            <Activity className="h-3 w-3" /> Average utilization: 84%
+                            <Activity className="h-3 w-3" /> {locale === 'ar' ? 'متوسط الاستخدام: 84%' : 'Average utilization: 84%'}
                         </div>
                     </CardContent>
                 </Card>
                 <Card className="border-none shadow-md bg-white border-l-4 border-l-amber-500">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">Upcoming Milestones</CardDescription>
-                        <CardTitle className="text-3xl font-black text-slate-800">4 Deadlines</CardTitle>
+                        <CardDescription className="text-xs font-bold uppercase tracking-widest text-slate-400">{dict.projects.upcomingMilestones}</CardDescription>
+                        <CardTitle className="text-3xl font-black text-slate-800">
+                            4 {locale === 'ar' ? 'مواعيد نهائية' : 'Deadlines'}
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-amber-600">

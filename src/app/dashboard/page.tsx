@@ -36,6 +36,7 @@ export default async function DashboardPage() {
     const cookieStore = await cookies()
     const rawLocale = cookieStore.get("NEXT_LOCALE")?.value || "en"
     const locale: Locale = rawLocale === "ar" ? "ar" : "en"
+    const isArabic = locale === "ar"
     const dict = getDictionary(locale)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -70,36 +71,36 @@ export default async function DashboardPage() {
 
     const stats = [
         {
-            title: "Confirmed Sales",
+            title: dict.dashboard.confirmedSales,
             value: `${totalSales.toLocaleString()} ${currency}`,
-            description: "Total value of active sales orders",
+            description: isArabic ? "إجمالي قيمة أوامر البيع النشطة" : "Total value of active sales orders",
             icon: DollarSign,
             trend: "up",
             color: "text-blue-600",
             bg: "bg-blue-50/50"
         },
         {
-            title: "Active Projects",
+            title: dict.dashboard.activeProjects,
             value: (projectsCount || 0).toString(),
-            description: "Ongoing construction & jobs",
+            description: isArabic ? "مشاريع البناء والأعمال القائمة" : "Ongoing construction & jobs",
             icon: Briefcase,
             trend: "up",
             color: "text-indigo-600",
             bg: "bg-indigo-50/50"
         },
         {
-            title: "Total Workforce",
+            title: dict.dashboard.totalWorkforce,
             value: (employeesCount || 0).toString(),
-            description: "Registered employee profiles",
+            description: isArabic ? "موظفي القوى العاملة المسجلين" : "Registered employee profiles",
             icon: Users,
             trend: "up",
             color: "text-emerald-600",
             bg: "bg-emerald-50/50"
         },
         {
-            title: "Stock Alerts",
+            title: dict.dashboard.stockAlerts,
             value: (lowStockCount || 0).toString(),
-            description: "Items needing urgent reorder",
+            description: isArabic ? "مواد تحتاج إلى إعادة طلب عاجلة" : "Items needing urgent reorder",
             icon: AlertCircle,
             trend: "down",
             color: (lowStockCount || 0) > 0 ? "text-rose-600" : "text-slate-400",
@@ -165,10 +166,14 @@ export default async function DashboardPage() {
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="text-xl font-bold">Project Operations Pipeline</CardTitle>
-                            <CardDescription>Track the latest movements across all active project sites.</CardDescription>
+                            <CardTitle className="text-xl font-bold">{dict.dashboard.projectOperationsPipeline}</CardTitle>
+                            <CardDescription>
+                                {isArabic ? 'تتبع أحدث التحركات في جميع مواقع المشاريع النشطة.' : 'Track the latest movements across all active project sites.'}
+                            </CardDescription>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-primary font-bold">View Roadmap <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary font-bold">
+                            {isArabic ? 'عرض خارطة الطريق' : 'View Roadmap'} <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
@@ -210,12 +215,12 @@ export default async function DashboardPage() {
                     <Card className="border-none shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white overflow-hidden relative">
                         <div className="absolute -top-10 -right-10 h-40 w-40 bg-white/5 rounded-full blur-2xl font-bold" />
                         <CardHeader>
-                            <CardTitle className="text-sm uppercase tracking-widest text-slate-400 font-bold">Monthly Financial Yield</CardTitle>
+                            <CardTitle className="text-sm uppercase tracking-widest text-slate-400 font-bold">{dict.dashboard.monthlyFinancialYield}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
-                                    <span>Procurement (Purchases)</span>
+                                    <span>{dict.dashboard.procurement}</span>
                                     <span>{totalPurchases.toLocaleString()} {currency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -224,7 +229,7 @@ export default async function DashboardPage() {
                             </div>
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
-                                    <span>Operations (Conf. Sales)</span>
+                                    <span>{dict.dashboard.operations}</span>
                                     <span>{totalSales.toLocaleString()} {currency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -232,7 +237,7 @@ export default async function DashboardPage() {
                                 </div>
                             </div>
                             <div className="pt-4 border-t border-white/10 mt-2">
-                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Projected Net Flow</p>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">{dict.dashboard.projectedNetFlow}</p>
                                 <h3 className="text-2xl font-black text-white">{(totalSales - totalPurchases).toLocaleString()} {currency}</h3>
                             </div>
                         </CardContent>
@@ -241,7 +246,7 @@ export default async function DashboardPage() {
                     {/* Quick Shortcuts */}
                     <Card className="border-none shadow-xl bg-white">
                         <CardHeader>
-                            <CardTitle className="text-sm font-bold">Operational Shortcuts</CardTitle>
+                            <CardTitle className="text-sm font-bold">{dict.dashboard.operationalShortcuts}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 gap-2">
                             <Link href="/sales/orders">

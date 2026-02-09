@@ -414,7 +414,7 @@ export default function CRMPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {isArabic ? 'إدارة علاقات العملاء' : 'CRM'}
+                        {dict.crm.title}
                     </h2>
                     <p className="text-muted-foreground text-sm">
                         {isArabic ? 'إدارة العملاء المحتملين والفرص والحملات التسويقية' : 'Manage leads, opportunities, and marketing campaigns'}
@@ -427,7 +427,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-blue-50 to-indigo-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-blue-600">
-                            {isArabic ? 'العملاء المحتملين' : 'Total Leads'}
+                            {dict.crm.leads}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-blue-700">{leadStats.total}</CardTitle>
                     </CardHeader>
@@ -435,7 +435,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-emerald-50 to-green-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-emerald-600">
-                            {isArabic ? 'العملاء الفائزين' : 'Won Leads'}
+                            {isArabic ? 'الفرص الرابحة' : 'Won Leads'}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-emerald-700">{leadStats.won}</CardTitle>
                     </CardHeader>
@@ -451,7 +451,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-amber-50 to-orange-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-amber-600">
-                            {isArabic ? 'قيمة خط الأنابيب' : 'Pipeline Value'}
+                            {dict.crm.pipelineValue}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-amber-700">{formatMoney(opportunityStats.pipeline)}</CardTitle>
                     </CardHeader>
@@ -459,7 +459,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-rose-50 to-pink-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-rose-600">
-                            {isArabic ? 'الإيرادات المحققة' : 'Won Revenue'}
+                            {dict.crm.wonRevenue}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-rose-700">{formatMoney(opportunityStats.wonValue)}</CardTitle>
                     </CardHeader>
@@ -472,15 +472,15 @@ export default function CRMPage() {
                     <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
                         <TabsTrigger value="leads" className="flex gap-2">
                             <Users className="h-4 w-4" />
-                            {isArabic ? 'العملاء المحتملين' : 'Leads'}
+                            {dict.crm.leads}
                         </TabsTrigger>
                         <TabsTrigger value="opportunities" className="flex gap-2">
                             <Target className="h-4 w-4" />
-                            {isArabic ? 'الفرص' : 'Opportunities'}
+                            {dict.crm.opportunities}
                         </TabsTrigger>
                         <TabsTrigger value="campaigns" className="flex gap-2">
                             <Megaphone className="h-4 w-4" />
-                            {isArabic ? 'الحملات' : 'Campaigns'}
+                            {dict.crm.campaigns}
                         </TabsTrigger>
                     </TabsList>
                     <div className="flex items-center gap-2">
@@ -497,12 +497,12 @@ export default function CRMPage() {
                             <Dialog open={isLeadDialogOpen} onOpenChange={setIsLeadDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
-                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'عميل محتمل جديد' : 'New Lead'}
+                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newLead}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
-                                        <DialogTitle>{isArabic ? 'إضافة عميل محتمل جديد' : 'Add New Lead'}</DialogTitle>
+                                        <DialogTitle>{dict.crm.newLead}</DialogTitle>
                                     </DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
@@ -611,12 +611,12 @@ export default function CRMPage() {
                             <Dialog open={isOpportunityDialogOpen} onOpenChange={setIsOpportunityDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
-                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'فرصة جديدة' : 'New Opportunity'}
+                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newOpportunity}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-xl">
                                     <DialogHeader>
-                                        <DialogTitle>{isArabic ? 'إضافة فرصة جديدة' : 'Add New Opportunity'}</DialogTitle>
+                                        <DialogTitle>{dict.crm.newOpportunity}</DialogTitle>
                                     </DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
@@ -692,12 +692,12 @@ export default function CRMPage() {
                             <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-lg">
-                                        <Plus className="mr-2 h-4 w-4" /> {isArabic ? 'حملة جديدة' : 'New Campaign'}
+                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newCampaign}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-xl">
                                     <DialogHeader>
-                                        <DialogTitle>{isArabic ? 'إنشاء حملة جديدة' : 'Create New Campaign'}</DialogTitle>
+                                        <DialogTitle>{dict.crm.newCampaign}</DialogTitle>
                                     </DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
