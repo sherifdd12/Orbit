@@ -1,5 +1,5 @@
 -- ========================================================
--- ORBIT ERP MASTER DATABASE FIX (V2)
+-- ORBIT ERP MASTER DATABASE FIX (V3)
 -- This script fixes missing tables, columns, and naming
 -- inconsistencies causing 404 and 400 errors.
 -- ========================================================
@@ -13,18 +13,31 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.system_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     key TEXT UNIQUE NOT NULL,
-    value TEXT,
+    value TEXT, -- Default to TEXT for simplicity
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure description column exists
+-- Fix for existing tables where 'value' might be JSONB or 'description' might be missing
 DO $$
 BEGIN
-    ALTER TABLE public.system_settings ADD COLUMN IF NOT EXISTS description TEXT;
-EXCEPTION WHEN OTHERS THEN NULL;
+    -- Ensure description column exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='system_settings' AND column_name='description') THEN
+        ALTER TABLE public.system_settings ADD COLUMN description TEXT;
+    END IF;
+
+    -- Ensure 'value' is TEXT (Some versions used JSONB which causes issues with plain strings)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='system_settings' AND column_name='value' AND data_type='jsonb') THEN
+        ALTER TABLE public.system_settings ALTER COLUMN value TYPE TEXT USING value::text;
+    END IF;
+EXCEPTION WHEN OTHERS THEN 
+    RAISE NOTICE 'Skipping system_settings structure update...';
 END $$;
 
+-- Clean quotes if they were imported from JSON conversion (e.g. '"KWD"' -> 'KWD')
+UPDATE public.system_settings SET value = TRIM(BOTH '"' FROM value) WHERE value LIKE '"%"';
+
+-- Seed initial data
 INSERT INTO public.system_settings (key, value, description)
 VALUES 
     ('base_currency', 'KWD', 'Base currency for the system'),
@@ -277,6 +290,7 @@ BEGIN
     DROP POLICY IF EXISTS "Authenticated users full access" ON forecasts;
     DROP POLICY IF EXISTS "Authenticated users full access" ON departments;
     DROP POLICY IF EXISTS "Authenticated users full access" ON employees;
+EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE POLICY "Authenticated users full access" ON system_settings FOR ALL TO authenticated USING (true);
