@@ -10,8 +10,6 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   compress: true,
   productionBrowserSourceMaps: false,
-  optimizeFonts: true,
-  swcMinify: true,
   poweredByHeader: false,
   
   // Security headers
