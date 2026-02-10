@@ -5,9 +5,6 @@ import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
 import { ProjectsClient } from "./ProjectsClient"
 import { redirect } from "next/navigation"
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 export default async function ProjectsPage() {
     const supabase = await createClient()
     const cookieStore = await cookies()

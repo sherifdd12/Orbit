@@ -10,9 +10,6 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 const cairo = Cairo({ subsets: ["arabic"], weight: ["300", "400", "500", "600", "700"] });
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
   title: "Orbit ERP - Management System",
   description: "Advanced ERP for Trading, Contracting, and Service Providers",

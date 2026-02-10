@@ -72,8 +72,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 
-export const runtime = 'edge';
-
 interface Shipment {
     id: string
     shipment_number: string

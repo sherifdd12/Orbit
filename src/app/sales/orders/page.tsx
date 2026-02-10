@@ -68,8 +68,6 @@ import { useSettings } from "@/lib/context/SettingsContext"
 import { PrintableDocument } from "@/lib/templates/PrintableDocument"
 import { defaultQuoteTemplate, defaultInvoiceTemplate } from "@/lib/templates/documentTemplates"
 
-export const runtime = 'edge';
-
 interface SalesOrderItem {
     id?: string
     description: string

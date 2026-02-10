@@ -34,9 +34,6 @@ import {
 import { DocumentUpload } from "./DocumentUpload"
 import { DocumentActions } from "./DocumentActions"
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 interface Document {
     id: string
     name: string

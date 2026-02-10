@@ -4,9 +4,6 @@ import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
 import { redirect } from "next/navigation"
 import { EmailClient } from "./EmailClient"
 
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-
 export default async function EmailPage() {
     const supabase = await createClient()
     const cookieStore = await cookies()

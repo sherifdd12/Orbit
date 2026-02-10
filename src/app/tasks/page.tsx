@@ -53,8 +53,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
-export const runtime = 'edge';
-
 interface Task {
     id: string
     title: string

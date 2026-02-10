@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-
 const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -8,6 +7,36 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Performance optimizations
+  compress: true,
+  productionBrowserSourceMaps: false,
+  optimizeFonts: true,
+  swcMinify: true,
+  poweredByHeader: false,
+  
+  // Security headers
+  headers: async () => {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+        ],
+      },
+    ];
+  },
+
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -16,6 +45,16 @@ const nextConfig: NextConfig = {
       };
     }
     return config;
+  },
+
+  // Image optimization
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
+    ],
   },
 };
 
