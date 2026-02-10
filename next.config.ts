@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
-  
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-icons", "date-fns"],
+  },
+
   // Security headers
   headers: async () => {
     return [
