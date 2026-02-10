@@ -32,6 +32,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { DocumentUpload } from "./DocumentUpload"
+import { DocumentActions } from "./DocumentActions"
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -189,16 +190,7 @@ export default async function DocumentsPage() {
                                             : (file.size / 1024).toFixed(1) + ' KB'}
                                     </TableCell>
                                     <TableCell className="pr-8">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-md text-slate-400 hover:text-blue-600" asChild>
-                                                <a href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${file.file_path}`} target="_blank" rel="noreferrer">
-                                                    <Download className="h-5 w-5" />
-                                                </a>
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-md text-slate-400 hover:text-slate-600 font-black">
-                                                <MoreVertical className="h-5 w-5" />
-                                            </Button>
-                                        </div>
+                                        <DocumentActions filePath={file.file_path} fileName={file.name} />
                                     </TableCell>
                                 </TableRow>
                             ))}

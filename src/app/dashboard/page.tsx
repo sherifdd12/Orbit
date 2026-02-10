@@ -65,6 +65,7 @@ export default async function DashboardPage() {
     const recentActivities = results[6].status === 'fulfilled' ? (results[6].value as any).data : [];
     const baseCurrencyRes = results[7].status === 'fulfilled' ? (results[7].value as any).data : null;
     const currency = baseCurrencyRes?.value || "KWD";
+    const safeCurrency = currency && currency.length === 3 ? currency : "KWD";
 
     const totalSales = (salesOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
     const totalPurchases = (purchaseOrders || []).reduce((acc: number, curr: any) => acc + (Number(curr.total) || 0), 0);
@@ -72,7 +73,7 @@ export default async function DashboardPage() {
     const stats = [
         {
             title: dict.dashboard.confirmedSales,
-            value: `${totalSales.toLocaleString()} ${currency}`,
+            value: `${totalSales.toLocaleString()} ${safeCurrency}`,
             description: isArabic ? "إجمالي قيمة أوامر البيع النشطة" : "Total value of active sales orders",
             icon: DollarSign,
             trend: "up",
@@ -221,7 +222,7 @@ export default async function DashboardPage() {
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
                                     <span>{dict.dashboard.procurement}</span>
-                                    <span>{totalPurchases.toLocaleString()} {currency}</span>
+                                    <span>{totalPurchases.toLocaleString()} {safeCurrency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-orange-500 rounded-full" style={{ width: '65%' }} />
@@ -230,7 +231,7 @@ export default async function DashboardPage() {
                             <div>
                                 <div className="flex justify-between text-xs text-slate-400 mb-1 font-bold">
                                     <span>{dict.dashboard.operations}</span>
-                                    <span>{totalSales.toLocaleString()} {currency}</span>
+                                    <span>{totalSales.toLocaleString()} {safeCurrency}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-emerald-500 rounded-full" style={{ width: '85%' }} />
@@ -238,7 +239,7 @@ export default async function DashboardPage() {
                             </div>
                             <div className="pt-4 border-t border-white/10 mt-2">
                                 <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">{dict.dashboard.projectedNetFlow}</p>
-                                <h3 className="text-2xl font-black text-white">{(totalSales - totalPurchases).toLocaleString()} {currency}</h3>
+                                <h3 className="text-2xl font-black text-white">{(totalSales - totalPurchases).toLocaleString()} {safeCurrency}</h3>
                             </div>
                         </CardContent>
                     </Card>

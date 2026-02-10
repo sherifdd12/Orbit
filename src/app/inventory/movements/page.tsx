@@ -195,8 +195,15 @@ export default function StockMovementsPage() {
                 supabase.from('warehouses').select('id, name, code').order('name')
             ])
 
+            // Fallback for inventory_items if 404
+            let finalItems = itemsRes.data || []
+            if (itemsRes.error && (itemsRes.error.code === '42P01' || itemsRes.error.message.includes('not found'))) {
+                const { data: fallbackData } = await supabase.from('items').select('id, name, sku, uom, avg_cost, stock_quantity').order('name')
+                if (fallbackData) finalItems = fallbackData
+            }
+
             if (!movementsRes.error) setMovements(movementsRes.data || [])
-            if (!itemsRes.error) setInventoryItems(itemsRes.data || [])
+            setInventoryItems(finalItems)
             if (!warehousesRes.error) setWarehouses(warehousesRes.data || [])
         } catch (error) {
             console.error('Error fetching data:', error)
@@ -442,8 +449,8 @@ export default function StockMovementsPage() {
                                                     type="button"
                                                     onClick={() => handleTypeChange(type)}
                                                     className={`p-3 rounded-lg border-2 flex flex-col items-center gap-2 transition-all ${isSelected
-                                                            ? 'border-primary bg-primary/5'
-                                                            : 'border-slate-200 hover:border-slate-300'
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-slate-200 hover:border-slate-300'
                                                         }`}
                                                 >
                                                     <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />

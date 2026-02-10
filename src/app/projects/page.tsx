@@ -32,11 +32,15 @@ export default async function ProjectsPage() {
     const currency = settingsRes.data?.value || "KWD"
 
     const formatMoney = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-            minimumFractionDigits: 3
-        }).format(amount)
+        try {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency && currency.length === 3 ? currency : 'KWD',
+                minimumFractionDigits: 3
+            }).format(amount)
+        } catch (e) {
+            return `${amount.toFixed(3)} KWD`
+        }
     }
 
     return (
