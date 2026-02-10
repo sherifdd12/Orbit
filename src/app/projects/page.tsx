@@ -33,13 +33,15 @@ export default async function ProjectsPage() {
 
     const formatMoney = (amount: number) => {
         try {
+            if (typeof amount !== 'number') return "0.000 " + (currency || "KWD")
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: currency && currency.length === 3 ? currency : 'KWD',
                 minimumFractionDigits: 3
             }).format(amount)
         } catch (e) {
-            return `${amount.toFixed(3)} KWD`
+            console.error("Money format error:", e)
+            return `${(amount || 0).toFixed(3)} ${currency || "KWD"}`
         }
     }
 
