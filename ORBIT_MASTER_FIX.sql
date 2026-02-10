@@ -1,5 +1,5 @@
 -- ========================================================
--- ORBIT ERP MASTER DATABASE FIX (V3)
+-- ORBIT ERP MASTER DATABASE FIX (V4)
 -- This script fixes missing tables, columns, and naming
 -- inconsistencies causing 404 and 400 errors.
 -- ========================================================
@@ -13,31 +13,25 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.system_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     key TEXT UNIQUE NOT NULL,
-    value TEXT, -- Default to TEXT for simplicity
+    value TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Fix for existing tables where 'value' might be JSONB or 'description' might be missing
 DO $$
 BEGIN
-    -- Ensure description column exists
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='system_settings' AND column_name='description') THEN
-        ALTER TABLE public.system_settings ADD COLUMN description TEXT;
-    END IF;
-
-    -- Ensure 'value' is TEXT (Some versions used JSONB which causes issues with plain strings)
+    ALTER TABLE public.system_settings ADD COLUMN IF NOT EXISTS description TEXT;
+    
+    -- Ensure 'value' is TEXT if it was JSONB
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='system_settings' AND column_name='value' AND data_type='jsonb') THEN
         ALTER TABLE public.system_settings ALTER COLUMN value TYPE TEXT USING value::text;
     END IF;
-EXCEPTION WHEN OTHERS THEN 
-    RAISE NOTICE 'Skipping system_settings structure update...';
+EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
--- Clean quotes if they were imported from JSON conversion (e.g. '"KWD"' -> 'KWD')
+-- Clean potential JSON quotes
 UPDATE public.system_settings SET value = TRIM(BOTH '"' FROM value) WHERE value LIKE '"%"';
 
--- Seed initial data
 INSERT INTO public.system_settings (key, value, description)
 VALUES 
     ('base_currency', 'KWD', 'Base currency for the system'),
@@ -48,30 +42,36 @@ ON CONFLICT (key) DO UPDATE SET
     description = EXCLUDED.description;
 
 -- 3. INVENTORY & WAREHOUSING
--- Ensure items table has all expected columns
+-- Ensure items table has all expected columns from ALL schema versions
 DO $$
 BEGIN
     ALTER TABLE public.items ADD COLUMN IF NOT EXISTS cost DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS purchase_price DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS avg_cost DECIMAL(15,3) DEFAULT 0;
     ALTER TABLE public.items ADD COLUMN IF NOT EXISTS selling_price DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS sale_price DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS price DECIMAL(15,3) DEFAULT 0;
     ALTER TABLE public.items ADD COLUMN IF NOT EXISTS stock_quantity DECIMAL(15,3) DEFAULT 0;
     ALTER TABLE public.items ADD COLUMN IF NOT EXISTS category TEXT;
     ALTER TABLE public.items ADD COLUMN IF NOT EXISTS unit TEXT DEFAULT 'pcs';
-    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS uom TEXT; -- Link for consistency
-    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS avg_cost DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS uom TEXT;
+    ALTER TABLE public.items ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 -- Create inventory_items VIEW for pages that expect it
+-- Robust selection using the columns we just ensured exist
 CREATE OR REPLACE VIEW public.inventory_items AS 
 SELECT 
     id, 
     name, 
     sku, 
-    COALESCE(selling_price, price) as unit_price, 
+    COALESCE(selling_price, sale_price, price, 0) as unit_price, 
     COALESCE(stock_quantity, 0) as quantity, 
-    COALESCE(unit, uom, 'pcs') as unit,
-    COALESCE(unit, uom, 'pcs') as uom,
-    COALESCE(avg_cost, cost, 0) as avg_cost,
+    COALESCE(uom, unit, 'pcs') as unit,
+    COALESCE(uom, unit, 'pcs') as uom,
+    COALESCE(avg_cost, purchase_price, cost, 0) as avg_cost,
+    stock_quantity,
     category,
     is_active,
     created_at
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS public.bank_accounts (
     currency TEXT DEFAULT 'KWD',
     current_balance DECIMAL(15,3) DEFAULT 0,
     is_active BOOLEAN DEFAULT true,
-    user_id UUID, -- For filtering in some versions
+    user_id UUID, 
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
