@@ -1,25 +1,22 @@
-"use client"
-
 import * as React from "react"
 import {
     Plus,
     Search,
     Download,
-    Cloud
+    Cloud,
+    FileIcon,
+    FileText,
+    Image as ImageIcon,
+    FileSpreadsheet,
+    MoreVertical
 } from "lucide-react"
+import { cookies } from "next/headers"
+import { createClient } from "@/utils/supabase/server"
+import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
+import { redirect } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/utils/supabase/client"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import {
     Card,
     CardContent,
@@ -34,6 +31,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { DocumentUpload } from "./DocumentUpload"
+
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 interface Document {
     id: string
@@ -42,180 +43,160 @@ interface Document {
     type: string
     size: number
     created_at: string
+    project_id?: string
+    projects?: { title: string } | { title: string }[]
 }
 
-export const runtime = 'edge';
+export default async function DocumentsPage() {
+    const supabase = await createClient()
+    const cookieStore = await cookies()
+    const rawLocale = cookieStore.get("NEXT_LOCALE")?.value || "en"
+    const locale: Locale = rawLocale === "ar" ? "ar" : "en"
+    const dict = getDictionary(locale)
 
-export default function DocumentsPage() {
-    const [docs, setDocs] = React.useState<Document[]>([])
-    const [loading, setLoading] = React.useState(true)
-    const [isUploadOpen, setIsUploadOpen] = React.useState(false)
-    const [newDoc, setNewDoc] = React.useState({
-        name: '',
-        type: 'PDF',
-        project_id: '',
-    })
-
-    const supabase = createClient()
-
-    const fetchDocs = React.useCallback(async () => {
-        setLoading(true)
-        const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false })
-        if (!error) setDocs(data || [])
-        setLoading(false)
-    }, [supabase])
-
-    React.useEffect(() => {
-        fetchDocs()
-    }, [fetchDocs])
-
-    const handleUpload = async () => {
-        const { error } = await supabase.from('documents').insert([{
-            name: newDoc.name,
-            file_path: '/placeholder/' + newDoc.name,
-            type: newDoc.type,
-            size: Math.floor(Math.random() * 5000)
-        }])
-        if (error) alert(error.message)
-        else {
-            setIsUploadOpen(false)
-            fetchDocs()
-        }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        redirect('/login')
     }
-    const exportToCSV = () => {
-        const headers = ["Name", "Type", "Size (MB)", "Date"]
-        const csvRows = docs.map(d => [d.name, d.type, (d.size / 1024).toFixed(2), new Date(d.created_at).toLocaleDateString()].join(","))
-        const csvContent = [headers.join(","), ...csvRows].join("\n")
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement("a")
-        link.setAttribute("href", url)
-        link.setAttribute("download", "documents_report.csv")
-        link.click()
+
+    // Parallel fetching
+    const [docsRes, projectsRes] = await Promise.all([
+        supabase.from('documents').select(`
+            *,
+            projects (title)
+        `).order('created_at', { ascending: false }),
+        supabase.from('projects').select('id, title').order('title')
+    ])
+
+    const docs: Document[] = docsRes.data || []
+    const projects = projectsRes.data || []
+
+    const totalSize = docs.reduce((acc, d) => acc + (d.size || 0), 0)
+    const totalGB = (totalSize / (1024 * 1024 * 1024)).toFixed(4)
+
+    const getFileIcon = (type: string) => {
+        const t = (type || '').toLowerCase()
+        if (t.includes('pdf')) return <FileText className="h-5 w-5 text-rose-500" />
+        if (t.includes('xl') || t.includes('csv') || t.includes('xls')) return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />
+        if (t.includes('png') || t.includes('jpg') || t.includes('jpeg')) return <ImageIcon className="h-5 w-5 text-blue-500" />
+        return <FileIcon className="h-5 w-5 text-slate-400" />
     }
 
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Document Management</h2>
-                    <p className="text-muted-foreground text-sm flex items-center gap-1">
+                    <h2 className="text-4xl font-black tracking-tight text-slate-900">Document Management</h2>
+                    <p className="text-slate-500 font-medium flex items-center gap-1.5 mt-1">
                         <Cloud className="h-4 w-4 text-blue-500" />
-                        Connected to your OneDrive Business Storage.
+                        Connected to secure cloud infrastructure.
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={exportToCSV}>
+                <div className="flex items-center gap-3">
+                    <Button variant="outline" className="h-11 shadow-sm border-slate-200 font-bold">
                         <Download className="mr-2 h-4 w-4" />
-                        Export CSV
+                        Export Audit
                     </Button>
-                    <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="bg-blue-600 hover:bg-blue-700">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Upload File
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Upload New File</DialogTitle>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>File Name</Label>
-                                    <Input value={newDoc.name} onChange={e => setNewDoc({ ...newDoc, name: e.target.value })} placeholder="document.pdf" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Type</Label>
-                                    <select
-                                        className="w-full border p-2 rounded"
-                                        value={newDoc.type}
-                                        onChange={e => setNewDoc({ ...newDoc, type: e.target.value })}
-                                    >
-                                        <option value="PDF">PDF</option>
-                                        <option value="Excel">Excel</option>
-                                        <option value="Word">Word</option>
-                                        <option value="Image">Image</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={handleUpload}>Save to Cloud</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                    <DocumentUpload projects={projects} />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-blue-50/50 border-blue-100 shadow-none">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Card className="bg-gradient-to-br from-blue-600 to-indigo-700 border-none shadow-xl text-white">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-bold text-blue-900">Total Storage</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase tracking-widest opacity-70">Cloud Storage Usage</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold text-blue-950">12.5 GB / 1 TB</div>
-                        <div className="w-full bg-blue-200 h-1.5 rounded-full mt-2">
-                            <div className="bg-blue-600 h-1.5 rounded-full w-[1.25%]" />
+                        <div className="text-3xl font-black">{totalGB} GB <span className="text-sm opacity-50 font-medium">/ 100 GB</span></div>
+                        <div className="w-full bg-white/20 h-2 rounded-full mt-4 overflow-hidden">
+                            <div className="bg-white h-full rounded-full transition-all" style={{ width: `${Math.max(1, Math.min(100, (Number(totalGB) / 100) * 100))}%` }} />
                         </div>
                     </CardContent>
                 </Card>
-                {/* Placeholder for other storage metrics */}
-                <div className="md:col-span-3 flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-6 py-4">
-                    <div className="flex gap-8">
-                        <div className="text-center">
-                            <div className="text-sm font-bold">1,240</div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Files</div>
+
+                <div className="md:col-span-3 flex items-center justify-between bg-white border-none shadow-md rounded-3xl px-8 py-4">
+                    <div className="flex gap-10">
+                        <div className="text-center group cursor-pointer">
+                            <div className="text-2xl font-black text-slate-800">{docs.length}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Total Files</div>
                         </div>
-                        <div className="text-center">
-                            <div className="text-sm font-bold">45</div>
-                            <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Folders</div>
+                        <div className="text-center group cursor-pointer">
+                            <div className="text-2xl font-black text-slate-800">{[...new Set(docs.map(d => d.type))].length}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Extensions</div>
+                        </div>
+                        <div className="text-center group cursor-pointer">
+                            <div className="text-2xl font-black text-slate-800">{projects.length}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Linked Projects</div>
                         </div>
                     </div>
-                    <div className="relative w-64">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search documents..." className="pl-9 h-9" />
+                    <div className="relative w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                        <Input placeholder="Search digital assets..." className="pl-12 h-12 bg-slate-50 border-none shadow-inner rounded-2xl" />
                     </div>
                 </div>
             </div>
 
-            <Card className="flex-1 shadow-sm border-slate-200 overflow-hidden">
+            <Card className="flex-1 shadow-2xl border-none bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader className="bg-slate-50/50">
-                            <TableRow>
-                                <TableHead>File Name</TableHead>
-                                <TableHead>Project</TableHead>
-                                <TableHead>Modified</TableHead>
-                                <TableHead className="text-right">Size</TableHead>
+                            <TableRow className="hover:bg-transparent border-slate-100">
+                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400 pl-8">Asset Name</TableHead>
+                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Context / Project</TableHead>
+                                <TableHead className="font-bold uppercase text-[10px] tracking-widest text-slate-400">Modification Date</TableHead>
+                                <TableHead className="text-right font-bold uppercase text-[10px] tracking-widest text-slate-400">Footprint (Size)</TableHead>
                                 <TableHead className="w-[100px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {loading ? (
-                                <TableRow><TableCell colSpan={5} className="text-center">Loading documents...</TableCell></TableRow>
-                            ) : docs.length === 0 ? (
-                                <TableRow><TableCell colSpan={5} className="text-center">No documents found.</TableCell></TableRow>
+                            {docs.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-40">
+                                        <div className="flex flex-col items-center gap-4 opacity-30">
+                                            <FileIcon className="h-16 w-16" />
+                                            <p className="font-bold text-lg">Digital archive is currently empty.</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
                             ) : docs.map((file) => (
-                                <TableRow key={file.id} className="hover:bg-slate-50/50 group">
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-medium">{file.name}</span>
-                                            <span className="text-[10px] text-muted-foreground uppercase">{file.type}</span>
+                                <TableRow key={file.id} className="hover:bg-blue-50/30 group border-slate-50 transition-colors">
+                                    <TableCell className="pl-8 py-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-white transition-colors shadow-sm">
+                                                {getFileIcon(file.type)}
+                                            </div>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">{file.name}</span>
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{file.type} Asset</span>
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <span className="text-sm font-medium text-slate-600">General</span>
+                                        {(file.projects as any)?.title ? (
+                                            <div className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-black uppercase tracking-tighter">
+                                                {(file.projects as any).title}
+                                            </div>
+                                        ) : (
+                                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest italic">General Cloud</span>
+                                        )}
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {new Date(file.created_at).toLocaleDateString()}
+                                    <TableCell className="text-sm font-bold text-slate-600">
+                                        {new Date(file.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                                     </TableCell>
-                                    <TableCell className="text-sm text-right font-mono text-muted-foreground">
-                                        {(file.size / 1024).toFixed(1)} MB
+                                    <TableCell className="text-sm text-right font-black text-slate-900">
+                                        {file.size > 1024 * 1024
+                                            ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+                                            : (file.size / 1024).toFixed(1) + ' KB'}
                                     </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <Download className="h-4 w-4" />
+                                    <TableCell className="pr-8">
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-md text-slate-400 hover:text-blue-600" asChild>
+                                                <a href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/documents/${file.file_path}`} target="_blank" rel="noreferrer">
+                                                    <Download className="h-5 w-5" />
+                                                </a>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-white hover:shadow-md text-slate-400 hover:text-slate-600 font-black">
+                                                <MoreVertical className="h-5 w-5" />
                                             </Button>
                                         </div>
                                     </TableCell>
