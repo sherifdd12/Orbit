@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { getDictionary, Locale } from "@/lib/i18n/dictionaries"

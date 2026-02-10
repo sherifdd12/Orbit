@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import * as React from "react"
 import {
     Plus,

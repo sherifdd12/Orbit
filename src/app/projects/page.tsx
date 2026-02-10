@@ -1,3 +1,6 @@
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 import * as React from "react"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"

@@ -1,4 +1,5 @@
 "use client"
+export const runtime = 'edge';
 
 import * as React from "react"
 import {
@@ -127,8 +128,20 @@ export default function ShipmentsPage() {
     const [isViewOpen, setIsViewOpen] = React.useState(false)
     const [selectedShipment, setSelectedShipment] = React.useState<Shipment | null>(null)
 
-    const [newShipment, setNewShipment] = React.useState({
-        shipment_type: 'Outbound' as const,
+    const [newShipment, setNewShipment] = React.useState<{
+        shipment_type: 'Outbound' | 'Inbound' | 'Transfer'
+        carrier_id: string
+        tracking_number: string
+        ship_date: string
+        expected_delivery: string
+        ship_to_name: string
+        ship_to_address: string
+        ship_to_city: string
+        ship_to_country: string
+        shipping_cost: number
+        notes: string
+    }>({
+        shipment_type: 'Outbound',
         carrier_id: '',
         tracking_number: '',
         ship_date: format(new Date(), 'yyyy-MM-dd'),

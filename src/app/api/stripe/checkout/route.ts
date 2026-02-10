@@ -1,9 +1,10 @@
+export const runtime = 'edge';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-04-10',
+  apiVersion: '2024-06-20',
 });
 
 /**
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const { tierId } = await request.json();
     const supabase = await createClient();
-    
+
     // Get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
