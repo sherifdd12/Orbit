@@ -72,7 +72,6 @@ interface ProjectsClientProps {
     dict: any
     locale: string
     currency: string
-    formatMoney: (amount: number) => string
 }
 
 export function ProjectsClient({
@@ -81,7 +80,6 @@ export function ProjectsClient({
     dict,
     locale,
     currency,
-    formatMoney
 }: ProjectsClientProps) {
     const router = useRouter()
     const [projects, setProjects] = React.useState<Project[]>(initialProjects)
@@ -101,6 +99,20 @@ export function ProjectsClient({
     })
 
     const supabase = createClient()
+
+    // Define formatMoney locally in the client component
+    const formatMoney = (amount: number): string => {
+        try {
+            if (typeof amount !== 'number' || isNaN(amount)) return `0.000 ${currency || 'KWD'}`
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency && currency.length === 3 ? currency : 'KWD',
+                minimumFractionDigits: 3
+            }).format(amount)
+        } catch (e) {
+            return `${(amount || 0).toFixed(3)} ${currency || 'KWD'}`
+        }
+    }
 
     const refreshData = async () => {
         const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false })

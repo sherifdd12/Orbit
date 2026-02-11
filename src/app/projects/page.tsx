@@ -31,20 +31,6 @@ export default async function ProjectsPage() {
     const customers = customersRes.data || []
     const currency = settingsRes.data?.value || "KWD"
 
-    const formatMoney = (amount: number) => {
-        try {
-            if (typeof amount !== 'number') return "0.000 " + (currency || "KWD")
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: currency && currency.length === 3 ? currency : 'KWD',
-                minimumFractionDigits: 3
-            }).format(amount)
-        } catch (e) {
-            console.error("Money format error:", e)
-            return `${(amount || 0).toFixed(3)} ${currency || "KWD"}`
-        }
-    }
-
     return (
         <ProjectsClient
             initialProjects={projects}
@@ -52,7 +38,6 @@ export default async function ProjectsPage() {
             dict={dict}
             locale={locale}
             currency={currency}
-            formatMoney={formatMoney}
         />
     )
 }
