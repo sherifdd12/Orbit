@@ -52,6 +52,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 
 interface Task {
@@ -79,6 +86,10 @@ export default function TasksPage() {
     const [searchTerm, setSearchTerm] = React.useState("")
     const [isEditOpen, setIsEditOpen] = React.useState(false)
     const [editingTask, setEditingTask] = React.useState<Task | null>(null)
+
+    // Filters
+    const [statusFilter, setStatusFilter] = React.useState<string>("All")
+    const [priorityFilter, setPriorityFilter] = React.useState<string>("All")
 
     const [newTask, setNewTask] = React.useState({
         title: '',
@@ -202,10 +213,16 @@ export default function TasksPage() {
         return <Badge className={`text-[10px] font-bold border-none shadow-sm ${colors[p] || 'bg-slate-100'}`}>{p}</Badge>
     }
 
-    const filtered = tasks.filter(t =>
-        t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.projects?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filtered = tasks.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (t.projects?.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (t.profiles?.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+
+        const matchesStatus = statusFilter === "All" || t.status === statusFilter
+        const matchesPriority = priorityFilter === "All" || t.priority === priorityFilter
+
+        return matchesSearch && matchesStatus && matchesPriority
+    })
 
     return (
         <div className="space-y-8">
@@ -307,11 +324,34 @@ export default function TasksPage() {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-xl font-bold gap-2">
-                        <Layout className="h-5 w-5" /> Kanban View
-                    </Button>
-                    <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-xl font-bold gap-2">
-                        <Filter className="h-5 w-5" /> Filters
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="h-14 w-40 bg-white border-none shadow-xl rounded-2xl font-bold">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="To Do">To Do</SelectItem>
+                            <SelectItem value="In Progress">In Progress</SelectItem>
+                            <SelectItem value="Review">Review</SelectItem>
+                            <SelectItem value="Done">Done</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                        <SelectTrigger className="h-14 w-40 bg-white border-none shadow-xl rounded-2xl font-bold">
+                            <SelectValue placeholder="Priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Priorities</SelectItem>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                            <SelectItem value="Critical">Critical</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Button variant="outline" className="h-14 px-6 rounded-2xl bg-white border-none shadow-xl font-bold gap-2" onClick={() => handleActionPlaceholder('Kanban View')}>
+                        <Layout className="h-5 w-5" /> Kanban
                     </Button>
                 </div>
             </div>

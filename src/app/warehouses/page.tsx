@@ -53,6 +53,7 @@ import { Progress } from "@/components/ui/progress"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -132,11 +133,46 @@ export default function WarehousesPage() {
         }
     }
 
-    const handleDeleteWarehouse = async (id: string) => {
-        if (!confirm("Are you sure you want to decommission this logistics node?")) return
-        const { error } = await supabase.from('warehouses').delete().eq('id', id)
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingWarehouse, setEditingWarehouse] = React.useState<WarehouseData | null>(null)
+
+    const handleEditWarehouse = async () => {
+        if (!editingWarehouse) return
+        const { error } = await supabase
+            .from('warehouses')
+            .update({
+                name: editingWarehouse.name,
+                code: editingWarehouse.code,
+                location: editingWarehouse.location,
+                total_capacity: editingWarehouse.total_capacity,
+                contact_phone: editingWarehouse.contact_phone,
+                status: editingWarehouse.status
+            })
+            .eq('id', editingWarehouse.id)
+
         if (error) alert(error.message)
-        else fetchData()
+        else {
+            setIsEditOpen(false)
+            setEditingWarehouse(null)
+            fetchData()
+        }
+    }
+
+    const [isAuditOpen, setIsAuditOpen] = React.useState(false)
+    const [auditItems, setAuditItems] = React.useState<any[]>([])
+    const [selectedWarehouseName, setSelectedWarehouseName] = React.useState('')
+
+    const handleAuditWarehouse = async (warehouseId: string, name: string) => {
+        setSelectedWarehouseName(name)
+        const { data, error } = await supabase
+            .from('items')
+            .select('*')
+            .eq('warehouse_id', warehouseId)
+
+        if (!error) {
+            setAuditItems(data || [])
+            setIsAuditOpen(true)
+        }
     }
 
     React.useEffect(() => {
@@ -326,11 +362,21 @@ export default function WarehousesPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2">
                                                     <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Node Operations</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Audit Inventory')} className="gap-2 p-3 rounded-lg"><Eye className="h-4 w-4" /> Audit Inventory</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('Node Settings')} className="gap-2 p-3 rounded-lg"><Edit className="h-4 w-4" /> Node Settings</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleAuditWarehouse(node.id, node.name)} className="gap-2 p-3 rounded-lg"><Eye className="h-4 w-4" /> Audit Inventory</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        setEditingWarehouse(node)
+                                                        setIsEditOpen(true)
+                                                    }} className="gap-2 p-3 rounded-lg"><Edit className="h-4 w-4" /> Node Settings</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleActionPlaceholder('Inventory Transfer')} className="gap-2 p-3 rounded-lg text-blue-600 font-bold"><ArrowRightLeft className="h-4 w-4" /> Inventory Transfer</DropdownMenuItem>
                                                     <DropdownMenuSeparator className="my-1 bg-slate-100" />
-                                                    <DropdownMenuItem onClick={() => handleDeleteWarehouse(node.id)} className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        if (confirm("Are you sure you want to decommission this logistics node?")) {
+                                                            supabase.from('warehouses').delete().eq('id', node.id).then(({ error }) => {
+                                                                if (error) alert(error.message)
+                                                                else fetchData()
+                                                            })
+                                                        }
+                                                    }} className="gap-2 p-3 rounded-lg text-rose-600"><Trash2 className="h-4 w-4" /> Decommission Node</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -341,6 +387,81 @@ export default function WarehousesPage() {
                     </div>
                 </CardContent>
             </Card>
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader><DialogTitle>Edit Logistics Node</DialogTitle></DialogHeader>
+                    {editingWarehouse && (
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Warehouse Name</Label>
+                                <Input value={editingWarehouse.name} onChange={e => setEditingWarehouse({ ...editingWarehouse, name: e.target.value })} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Code</Label>
+                                    <Input value={editingWarehouse.code} onChange={e => setEditingWarehouse({ ...editingWarehouse, code: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Total Capacity</Label>
+                                    <Input type="number" value={editingWarehouse.total_capacity} onChange={e => setEditingWarehouse({ ...editingWarehouse, total_capacity: Number(e.target.value) })} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Status</Label>
+                                <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingWarehouse.status} onChange={e => setEditingWarehouse({ ...editingWarehouse, status: e.target.value as any })}>
+                                    <option value="Active">Operational</option>
+                                    <option value="Full">Near Capacity</option>
+                                    <option value="Inactive">Offline</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Location</Label>
+                                <Input value={editingWarehouse.location} onChange={e => setEditingWarehouse({ ...editingWarehouse, location: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                        <Button onClick={handleEditWarehouse} className="bg-blue-600 text-white">Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAuditOpen} onOpenChange={setIsAuditOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Inventory Audit: {selectedWarehouseName}</DialogTitle>
+                        <DialogDescription>Current stock levels for items at this terminal.</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Item Name</TableHead>
+                                    <TableHead>SKU</TableHead>
+                                    <TableHead className="text-right">Stock</TableHead>
+                                    <TableHead>UOM</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {auditItems.length === 0 ? (
+                                    <TableRow><TableCell colSpan={4} className="text-center py-6 text-slate-400 font-medium">No items found in this warehouse.</TableCell></TableRow>
+                                ) : auditItems.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-bold">{item.name}</TableCell>
+                                        <TableCell><Badge variant="outline" className="text-[10px] tracking-tight">{item.sku}</Badge></TableCell>
+                                        <TableCell className="text-right font-black text-blue-600">{item.stock_quantity}</TableCell>
+                                        <TableCell className="text-xs uppercase text-slate-400 font-bold">{item.uom}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsAuditOpen(false)} className="bg-slate-900">Close Audit</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

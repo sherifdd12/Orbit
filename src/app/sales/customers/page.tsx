@@ -17,6 +17,7 @@ import {
     ArrowUpRight,
     ArrowDownLeft
 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 
 import { Button } from "@/components/ui/button"
@@ -79,6 +80,7 @@ export default function CustomersPage() {
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
     const [isAddOpen, setIsAddOpen] = React.useState(false)
+    const router = useRouter()
 
     // Form state
     const [newCust, setNewCust] = React.useState({
@@ -121,6 +123,44 @@ export default function CustomersPage() {
             setNewCust({ name: '', company: '', email: '', phone: '', address: '', customer_type: 'Company', credit_limit: 10000, payment_terms: 30 })
             fetchData()
         }
+    }
+
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingCust, setEditingCust] = React.useState<Customer | null>(null)
+
+    const handleEdit = async () => {
+        if (!editingCust) return
+        const { error } = await supabase
+            .from('customers')
+            .update({
+                name: editingCust.name,
+                company: editingCust.company,
+                email: editingCust.email,
+                phone: editingCust.phone,
+                address: editingCust.address,
+                customer_type: editingCust.customer_type,
+                credit_limit: editingCust.credit_limit,
+                payment_terms: editingCust.payment_terms
+            })
+            .eq('id', editingCust.id)
+
+        if (error) alert(error.message)
+        else {
+            setIsEditOpen(false)
+            setEditingCust(null)
+            fetchData()
+        }
+    }
+
+    const handleDeactivate = async (id: string) => {
+        if (!confirm("Are you sure you want to deactivate this customer?")) return
+        const { error } = await supabase
+            .from('customers')
+            .update({ is_active: false })
+            .eq('id', id)
+
+        if (error) alert(error.message)
+        else fetchData()
     }
 
     const filtered = customers.filter(c =>
@@ -284,9 +324,18 @@ export default function CustomersPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Customer Profile</DropdownMenuLabel>
-                                                    <DropdownMenuItem className="gap-2"><Edit className="h-4 w-4" /> Edit Profile</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-blue-600"><Wallet className="h-4 w-4" /> View Ledger</DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2 text-rose-600"><Trash2 className="h-4 w-4" /> Deactivate</DropdownMenuItem>
+                                                    <DropdownMenuItem className="gap-2" onClick={() => {
+                                                        setEditingCust(customer)
+                                                        setIsEditOpen(true)
+                                                    }}>
+                                                        <Edit className="h-4 w-4" /> Edit Profile
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="gap-2 text-blue-600" onClick={() => router.push(`/finance/${customer.id}/ledger`)}>
+                                                        <Wallet className="h-4 w-4" /> View Ledger
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="gap-2 text-rose-600" onClick={() => handleDeactivate(customer.id)}>
+                                                        <Trash2 className="h-4 w-4" /> Deactivate
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -297,6 +346,56 @@ export default function CustomersPage() {
                     </div>
                 </CardContent>
             </Card>
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Edit Customer: {editingCust?.name}</DialogTitle>
+                    </DialogHeader>
+                    {editingCust && (
+                        <div className="grid grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Full Name / Contact Person</Label>
+                                <Input value={editingCust.name} onChange={e => setEditingCust({ ...editingCust, name: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Company Name</Label>
+                                <Input value={editingCust.company || ''} onChange={e => setEditingCust({ ...editingCust, company: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Customer Type</Label>
+                                <select className="w-full border rounded-md p-2 h-10" value={editingCust.customer_type} onChange={e => setEditingCust({ ...editingCust, customer_type: e.target.value as any })}>
+                                    <option value="Company">Company / Business</option>
+                                    <option value="Individual">Individual</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Email</Label>
+                                <Input type="email" value={editingCust.email || ''} onChange={e => setEditingCust({ ...editingCust, email: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Phone</Label>
+                                <Input value={editingCust.phone || ''} onChange={e => setEditingCust({ ...editingCust, phone: e.target.value })} />
+                            </div>
+                            <div className="space-y-2 col-span-2">
+                                <Label>Address</Label>
+                                <Input value={editingCust.address || ''} onChange={e => setEditingCust({ ...editingCust, address: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Credit Limit ({currency})</Label>
+                                <Input type="number" value={editingCust.credit_limit} onChange={e => setEditingCust({ ...editingCust, credit_limit: parseFloat(e.target.value) })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Payment Terms (Days)</Label>
+                                <Input type="number" value={editingCust.payment_terms} onChange={e => setEditingCust({ ...editingCust, payment_terms: parseInt(e.target.value) })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
+                        <Button onClick={handleEdit}>{dict.common.save} Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

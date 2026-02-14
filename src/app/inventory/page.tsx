@@ -57,6 +57,13 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 
@@ -71,6 +78,7 @@ interface Item {
     uom: string
     avg_cost: number
     status?: string
+    warehouse_id?: string
 }
 
 export default function InventoryPage() {
@@ -87,6 +95,10 @@ export default function InventoryPage() {
     const [isEditOpen, setIsEditOpen] = React.useState(false)
     const [editingItem, setEditingItem] = React.useState<Item | null>(null)
 
+    const [warehouses, setWarehouses] = React.useState<{ id: string, name: string }[]>([])
+    const [warehouseFilter, setWarehouseFilter] = React.useState<string>("All")
+    const [categoryFilter, setCategoryFilter] = React.useState<string>("All")
+
     const [newItem, setNewItem] = React.useState({
         name: '',
         sku: '',
@@ -100,12 +112,13 @@ export default function InventoryPage() {
 
     const fetchData = React.useCallback(async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('items')
-            .select('*')
-            .order('created_at', { ascending: false })
+        const [itemsRes, warehousesRes] = await Promise.all([
+            supabase.from('items').select('*').order('name'),
+            supabase.from('warehouses').select('id, name')
+        ])
 
-        if (!error) setItems(data || [])
+        if (!itemsRes.error) setItems(itemsRes.data || [])
+        if (!warehousesRes.error) setWarehouses(warehousesRes.data || [])
         setLoading(false)
     }, [supabase])
 
@@ -189,14 +202,35 @@ export default function InventoryPage() {
         }
     }
 
+    const [isTransactionsOpen, setIsTransactionsOpen] = React.useState(false)
+    const [selectedItemForTransactions, setSelectedItemForTransactions] = React.useState<Item | null>(null)
+    const [itemAuditLogs, setItemAuditLogs] = React.useState<any[]>([])
+
+    const fetchItemAuditLogs = async (itemId: string) => {
+        const { data, error } = await supabase
+            .from('audit_logs')
+            .select('*')
+            .eq('record_id', itemId)
+            .order('created_at', { ascending: false })
+
+        if (!error) setItemAuditLogs(data || [])
+    }
+
     const handleActionPlaceholder = (action: string) => {
         alert(`${action} feature is under development. Coming soon!`)
     }
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredItems = items.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (item.sku?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+
+        const matchesCategory = categoryFilter === "All" || item.category === categoryFilter
+        const matchesWarehouse = warehouseFilter === "All" || item.warehouse_id === warehouseFilter
+
+        return matchesSearch && matchesCategory && matchesWarehouse
+    })
+
+    const categories = Array.from(new Set(items.map(i => i.category))).filter(Boolean)
 
     const stats = {
         totalItems: items.length,
@@ -303,9 +337,30 @@ export default function InventoryPage() {
                                 onChange={e => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Badge variant="outline" className="h-7 cursor-pointer hover:bg-slate-100" onClick={() => handleActionPlaceholder('Warehouse Filter')}><Warehouse className="h-3 w-3 mr-1" /> Main Warehouse</Badge>
-                            <Button variant="outline" size="sm" className="bg-white" onClick={() => handleActionPlaceholder('Filters')}><Filter className="h-4 w-4" /></Button>
+                        <div className="flex items-center gap-3">
+                            <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+                                <SelectTrigger className="w-48 bg-white border-none shadow-sm h-10">
+                                    <SelectValue placeholder="All Warehouses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Warehouses</SelectItem>
+                                    {warehouses.map(w => (
+                                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                <SelectTrigger className="w-40 bg-white border-none shadow-sm h-10">
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Categories</SelectItem>
+                                    {categories.map(c => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </CardHeader>
@@ -373,7 +428,13 @@ export default function InventoryPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
                                                     <DropdownMenuLabel>Item Operations</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => handleActionPlaceholder('View Transactions')} className="gap-2"><Eye className="h-4 w-4" /> View Transactions</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => {
+                                                        setSelectedItemForTransactions(item)
+                                                        fetchItemAuditLogs(item.id)
+                                                        setIsTransactionsOpen(true)
+                                                    }} className="gap-2">
+                                                        <Eye className="h-4 w-4" /> View Transactions
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => {
                                                         setEditingItem(item)
                                                         setIsEditOpen(true)
@@ -470,6 +531,40 @@ export default function InventoryPage() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
                         <Button onClick={handleEditItem}>{dict.common.save} Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isTransactionsOpen} onOpenChange={setIsTransactionsOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Item History: {selectedItemForTransactions?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto py-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Action</TableHead>
+                                    <TableHead>Changes</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {itemAuditLogs.length === 0 ? (
+                                    <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">No transaction history found.</TableCell></TableRow>
+                                ) : itemAuditLogs.map(log => (
+                                    <TableRow key={log.id}>
+                                        <TableCell className="text-xs whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</TableCell>
+                                        <TableCell><Badge variant="outline">{log.action}</Badge></TableCell>
+                                        <TableCell className="text-xs max-w-xs truncate">
+                                            {log.changed_fields?.join(", ") || "Initial Creation"}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsTransactionsOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

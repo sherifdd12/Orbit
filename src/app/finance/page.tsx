@@ -3,7 +3,8 @@
 import * as React from "react"
 import {
     Download,
-    Plus
+    Plus,
+    Trash2
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 
@@ -84,6 +85,13 @@ export default function FinancePage() {
         }
     }
 
+    const handleDeleteTransaction = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this financial record?")) return
+        const { error } = await supabase.from('finance_records').delete().eq('id', id)
+        if (error) alert(error.message)
+        else fetchTransactions()
+    }
+
     const exportToCSV = () => {
         const headers = ["Date", "Description", "Category", "Amount", "Type"]
         const csvRows = transactions.map(t => [t.date, t.description, t.category, t.amount, t.type].join(","))
@@ -155,14 +163,19 @@ export default function FinancePage() {
                 <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {loading ? <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow> : transactions.map(tx => (
-                                <TableRow key={tx.id}>
+                            {loading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> : transactions.map(tx => (
+                                <TableRow key={tx.id} className="group">
                                     <TableCell>{tx.date}</TableCell>
                                     <TableCell className="font-medium text-slate-900">{tx.description}</TableCell>
                                     <TableCell>{tx.category}</TableCell>
                                     <TableCell className={`text-right font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>{tx.type === 'Income' ? '+' : '-'}${tx.amount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteTransaction(tx.id)} className="h-8 w-8 p-0 text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

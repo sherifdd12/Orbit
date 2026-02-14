@@ -30,6 +30,7 @@ import { getDictionary, Locale } from "@/lib/i18n/dictionaries"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Clock as DashboardClock } from "@/components/dashboard/Clock"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -123,8 +124,8 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="hidden md:flex flex-col items-end px-4 py-1 border-r border-slate-200">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Server Time</span>
-                        <span className="text-sm font-mono font-bold text-slate-600">11:37 AM</span>
+                        <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{isArabic ? "الوقت الحالي" : "Current Time"}</span>
+                        <DashboardClock />
                     </div>
                     <Button className="bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-200 border-none">
                         <Activity className="mr-2 h-4 w-4" /> Global Activity
