@@ -206,6 +206,7 @@ export default function GeneralLedgerPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12 text-center">#</TableHead>
                                         <TableHead className="pl-6">{dict.common.date}</TableHead>
                                         <TableHead>Reference</TableHead>
                                         <TableHead>{dict.common.description}</TableHead>
@@ -216,12 +217,15 @@ export default function GeneralLedgerPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {loading ? (
-                                        <TableRow><TableCell colSpan={6} className="text-center py-20">{dict.common.loading}</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell></TableRow>
                                     ) : entries.length === 0 ? (
-                                        <TableRow><TableCell colSpan={6} className="text-center py-20">No transactions found for this period.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={7} className="text-center py-20">No transactions found for this period.</TableCell></TableRow>
                                     ) : (
                                         entries.map((e, idx) => (
                                             <TableRow key={e.id} className="hover:bg-slate-50/50">
+                                                <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                                                    {idx + 1}
+                                                </TableCell>
                                                 <TableCell className="pl-6 font-mono text-xs">
                                                     {format(new Date(e.date), "dd/MM/yyyy")}
                                                 </TableCell>
