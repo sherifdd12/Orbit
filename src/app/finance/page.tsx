@@ -45,7 +45,11 @@ interface Transaction {
     type: 'Income' | 'Expense'
 }
 
+import { useLanguage } from "@/lib/i18n/LanguageContext"
+
 export default function FinancePage() {
+    const { dict, locale } = useLanguage()
+    const isArabic = locale === 'ar'
     const [transactions, setTransactions] = React.useState<Transaction[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
@@ -112,33 +116,33 @@ export default function FinancePage() {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Finance & Accounting</h2>
-                    <p className="text-muted-foreground text-sm">Monitor cash flow and track business expenses.</p>
+                    <h2 className="text-3xl font-bold tracking-tight">{isArabic ? 'المالية والمحاسبة' : 'Finance & Accounting'}</h2>
+                    <p className="text-muted-foreground text-sm">{isArabic ? 'مراقبة التدفق النقدي وتتبع مصروفات العمل.' : 'Monitor cash flow and track business expenses.'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={exportToCSV}>
-                        <Download className="mr-2 h-4 w-4" /> Export CSV
+                        <Download className="mr-2 h-4 w-4" /> {isArabic ? 'تصدير CSV' : 'Export CSV'}
                     </Button>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> New Transaction</Button></DialogTrigger>
+                        <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> {isArabic ? 'معاملة جديدة' : 'New Transaction'}</Button></DialogTrigger>
                         <DialogContent>
-                            <DialogHeader><DialogTitle>New Transaction</DialogTitle></DialogHeader>
+                            <DialogHeader><DialogTitle>{isArabic ? 'معاملة جديدة' : 'New Transaction'}</DialogTitle></DialogHeader>
                             <div className="grid gap-4 py-4">
-                                <div className="space-y-2"><Label>Description</Label><Input value={newTx.description} onChange={e => setNewTx({ ...newTx, description: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>{isArabic ? 'الوصف' : 'Description'}</Label><Input value={newTx.description} onChange={e => setNewTx({ ...newTx, description: e.target.value })} /></div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2"><Label>Amount</Label><Input type="number" value={newTx.amount} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} /></div>
+                                    <div className="space-y-2"><Label>{isArabic ? 'المبلغ' : 'Amount'}</Label><Input type="number" value={newTx.amount} onChange={e => setNewTx({ ...newTx, amount: Number(e.target.value) })} /></div>
                                     <div className="space-y-2">
-                                        <Label>Type</Label>
+                                        <Label>{isArabic ? 'النوع' : 'Type'}</Label>
                                         <select className="w-full border rounded p-2" value={newTx.type} onChange={e => setNewTx({ ...newTx, type: e.target.value as 'Income' | 'Expense' })}>
-                                            <option value="Expense">Expense</option>
-                                            <option value="Income">Income</option>
+                                            <option value="Expense">{isArabic ? 'مصروف' : 'Expense'}</option>
+                                            <option value="Income">{isArabic ? 'دخل' : 'Income'}</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div className="space-y-2"><Label>Category</Label><Input value={newTx.category} onChange={e => setNewTx({ ...newTx, category: e.target.value })} /></div>
-                                <div className="space-y-2"><Label>Date</Label><Input type="date" value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>{isArabic ? 'الفئة' : 'Category'}</Label><Input value={newTx.category} onChange={e => setNewTx({ ...newTx, category: e.target.value })} /></div>
+                                <div className="space-y-2"><Label>{isArabic ? 'التاريخ' : 'Date'}</Label><Input type="date" value={newTx.date} onChange={e => setNewTx({ ...newTx, date: e.target.value })} /></div>
                             </div>
-                            <DialogFooter><Button onClick={handleAddTransaction}>Save</Button></DialogFooter>
+                            <DialogFooter><Button onClick={handleAddTransaction}>{isArabic ? 'حفظ' : 'Save'}</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -146,26 +150,26 @@ export default function FinancePage() {
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-slate-950 text-slate-50 border-none shadow-xl">
-                    <CardHeader><CardTitle className="text-sm">Net Balance</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm">{isArabic ? 'صافي الرصيد' : 'Net Balance'}</CardTitle></CardHeader>
                     <CardContent><div className="text-3xl font-bold">${balance.toLocaleString()}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle className="text-sm">Income</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm">{isArabic ? 'الدخل' : 'Income'}</CardTitle></CardHeader>
                     <CardContent><div className="text-2xl font-bold text-emerald-600">${totalIncome.toLocaleString()}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle className="text-sm">Expenses</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm">{isArabic ? 'المصروفات' : 'Expenses'}</CardTitle></CardHeader>
                     <CardContent><div className="text-2xl font-bold text-rose-600">${totalExpenses.toLocaleString()}</div></CardContent>
                 </Card>
             </div>
 
             <Card>
-                <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{isArabic ? 'المعاملات' : 'Transactions'}</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Description</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>{dict.common.date}</TableHead><TableHead>{isArabic ? 'الوصف' : 'Description'}</TableHead><TableHead>{isArabic ? 'الفئة' : 'Category'}</TableHead><TableHead className="text-right">{isArabic ? 'المبلغ' : 'Amount'}</TableHead><TableHead className="text-right">{isArabic ? 'الإجراءات' : 'Actions'}</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {loading ? <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow> : transactions.map(tx => (
+                            {loading ? <TableRow><TableCell colSpan={5} className="text-center">{isArabic ? 'جاري التحميل...' : 'Loading...'}</TableCell></TableRow> : transactions.map(tx => (
                                 <TableRow key={tx.id} className="group">
                                     <TableCell>{tx.date}</TableCell>
                                     <TableCell className="font-medium text-slate-900">{tx.description}</TableCell>

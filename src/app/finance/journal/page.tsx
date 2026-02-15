@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { format } from "date-fns"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -63,6 +64,7 @@ interface JournalEntry {
 export default function JournalEntriesPage() {
     const { dict, locale } = useLanguage()
     const { currency } = useSettings()
+    const router = useRouter()
     const [entries, setEntries] = React.useState<JournalEntry[]>([])
     const [loading, setLoading] = React.useState(true)
     const [searchTerm, setSearchTerm] = React.useState("")
@@ -119,7 +121,9 @@ export default function JournalEntriesPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{dict.finance.journalEntries}</h2>
-                    <p className="text-muted-foreground text-sm">Review and manage all double-entry manual journal items.</p>
+                    <p className="text-muted-foreground text-sm">
+                        {locale === 'ar' ? 'قم بمراجعة وإدارة كافة قيود اليومية اليدوية بنظام القيد المزدوج.' : 'Review and manage all double-entry manual journal items.'}
+                    </p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline"><Tag className="h-4 w-4 mr-2" /> Categories</Button>
@@ -183,7 +187,7 @@ export default function JournalEntriesPage() {
                                     </TableCell>
                                     <TableCell>{getStatusBadge(e.status)}</TableCell>
                                     <TableCell className="text-right pr-6">
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => router.push(`/finance/journal/${e.id}`)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                     </TableCell>

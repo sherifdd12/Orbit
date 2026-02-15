@@ -165,11 +165,39 @@ export function PrintableDocument({ template, data, companyBranding }: PrintDocu
             style={{
                 fontFamily: isArabic ? "'Noto Sans Arabic', 'Arial', sans-serif" : "'Inter', 'Arial', sans-serif",
                 padding: `${template.margins.top}mm ${template.margins.right}mm ${template.margins.bottom}mm ${template.margins.left}mm`,
-                width: template.paperSize === 'A4' ? '210mm' : template.paperSize === 'Letter' ? '8.5in' : '148mm',
-                minHeight: template.paperSize === 'A4' ? '297mm' : template.paperSize === 'Letter' ? '11in' : '210mm',
-                position: 'relative'
+                width: template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '297mm' : '210mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '11in' : '8.5in') : (template.orientation === 'landscape' ? '210mm' : '148mm'),
+                minHeight: template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '210mm' : '297mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '8.5in' : '11in') : (template.orientation === 'landscape' ? '148mm' : '210mm'),
+                position: 'relative',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
             }}
         >
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        size: ${template.paperSize} ${template.orientation};
+                        margin: 0;
+                    }
+                    
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: white;
+                    }
+
+                    .print-document {
+                        width: ${template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '297mm' : '210mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '11in' : '8.5in') : (template.orientation === 'landscape' ? '210mm' : '148mm')} !important;
+                        min-height: ${template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '210mm' : '297mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '8.5in' : '11in') : (template.orientation === 'landscape' ? '148mm' : '210mm')} !important;
+                        margin: 0 !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                    }
+                    
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
             {/* Watermark */}
             {template.showWatermark && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
@@ -456,29 +484,5 @@ export function PrintableDocument({ template, data, companyBranding }: PrintDocu
     )
 }
 
-// Print styles to be added to globals.css
-export const printStyles = `
-@media print {
-    @page {
-        size: A4;
-        margin: 0;
-    }
-    
-    body {
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
-    }
-    
-    .print-document {
-        width: 210mm !important;
-        min-height: 297mm !important;
-        margin: 0 !important;
-        padding: 10mm !important;
-        box-shadow: none !important;
-    }
-    
-    .no-print {
-        display: none !important;
-    }
-}
-`
+// Print styles are now handled dynamically via the <style> tag in the component
+export const printStyles = ''

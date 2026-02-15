@@ -242,11 +242,16 @@ export default function FinancialReportsPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{dict.sidebar.reports} - {dict.sidebar.finance}</h2>
-                    <p className="text-muted-foreground text-sm">Real-time financial performance based on live data.</p>
+                    <p className="text-muted-foreground text-sm">
+                        {locale === 'ar' ? 'أداء مالي فوري بناءً على البيانات الحية.' : 'Real-time financial performance based on live data.'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+                        <Printer className="h-4 w-4" /> {locale === 'ar' ? 'طباعة' : 'Print'}
+                    </Button>
                     <Button variant="outline" className="gap-2" onClick={fetchReportData}>
-                        <Calendar className="h-4 w-4" /> Refresh Data
+                        <Calendar className="h-4 w-4" /> {locale === 'ar' ? 'تحديث البيانات' : 'Refresh Data'}
                     </Button>
                     <Button className="gap-2" onClick={handleExportReport}>
                         <FileSpreadsheet className="h-4 w-4" /> {dict.common.export} CSV
@@ -263,7 +268,7 @@ export default function FinancialReportsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center text-xs text-blue-100 gap-1">
-                            <ArrowUpRight className="h-3 w-3" /> From confirmed sales orders
+                            <ArrowUpRight className="h-3 w-3" /> {locale === 'ar' ? 'من أوامر المبيعات المؤكدة' : 'From confirmed sales orders'}
                         </div>
                     </CardContent>
                 </Card>
@@ -274,7 +279,7 @@ export default function FinancialReportsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center text-xs text-rose-100 gap-1">
-                            <ArrowDownLeft className="h-3 w-3" /> From received purchases
+                            <ArrowDownLeft className="h-3 w-3" /> {locale === 'ar' ? 'من المشتريات المستلمة' : 'From received purchases'}
                         </div>
                     </CardContent>
                 </Card>
@@ -286,7 +291,7 @@ export default function FinancialReportsPage() {
                     <CardContent>
                         <div className="flex items-center text-xs text-emerald-100 gap-1">
                             {netProfit >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            {profitMargin}% Margin
+                            {profitMargin}% {locale === 'ar' ? 'هامش الربح' : 'Margin'}
                         </div>
                     </CardContent>
                 </Card>
@@ -297,18 +302,18 @@ export default function FinancialReportsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center text-xs text-muted-foreground gap-1">
-                            Total stock at average cost
+                            {locale === 'ar' ? 'إجمالي المخزون بمتوسط التكلفة' : 'Total stock at average cost'}
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList className="bg-white/50 backdrop-blur-sm p-1 border">
-                    <TabsTrigger value="overview" className="gap-2"><PieChart className="h-4 w-4" /> Overview</TabsTrigger>
-                    <TabsTrigger value="receivables" className="gap-2"><TrendingUp className="h-4 w-4" /> Receivables</TabsTrigger>
-                    <TabsTrigger value="payables" className="gap-2"><TrendingDown className="h-4 w-4" /> Payables</TabsTrigger>
-                    <TabsTrigger value="projects" className="gap-2"><Layers className="h-4 w-4" /> Project Budgets</TabsTrigger>
+                <TabsList className="bg-white/50 backdrop-blur-sm p-1 border no-print">
+                    <TabsTrigger value="overview" className="gap-2"><PieChart className="h-4 w-4" /> {locale === 'ar' ? 'نظرة عامة' : 'Overview'}</TabsTrigger>
+                    <TabsTrigger value="receivables" className="gap-2"><TrendingUp className="h-4 w-4" /> {locale === 'ar' ? 'الذمم المدينة' : 'Receivables'}</TabsTrigger>
+                    <TabsTrigger value="payables" className="gap-2"><TrendingDown className="h-4 w-4" /> {locale === 'ar' ? 'الذمم الدائنة' : 'Payables'}</TabsTrigger>
+                    <TabsTrigger value="projects" className="gap-2"><Layers className="h-4 w-4" /> {locale === 'ar' ? 'ميزانيات المشاريع' : 'Project Budgets'}</TabsTrigger>
                 </TabsList>
 
                 {/* Overview Content */}
@@ -316,8 +321,8 @@ export default function FinancialReportsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card className="border-none shadow-md">
                             <CardHeader>
-                                <CardTitle>Top Customers by Revenue</CardTitle>
-                                <CardDescription>Highest contributing clients</CardDescription>
+                                <CardTitle>{locale === 'ar' ? 'أفضل العملاء حسب الإيرادات' : 'Top Customers by Revenue'}</CardTitle>
+                                <CardDescription>{locale === 'ar' ? 'أعلى العملاء مساهمة' : 'Highest contributing clients'}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {data.topCustomers.length === 0 ? (
@@ -335,8 +340,8 @@ export default function FinancialReportsPage() {
                         </Card>
                         <Card className="border-none shadow-md">
                             <CardHeader>
-                                <CardTitle>Top Vendors by Spend</CardTitle>
-                                <CardDescription>Highest procurement sources</CardDescription>
+                                <CardTitle>{locale === 'ar' ? 'أفضل الموردين حسب الإنفاق' : 'Top Vendors by Spend'}</CardTitle>
+                                <CardDescription>{locale === 'ar' ? 'أعلى مصادر التوريد' : 'Highest procurement sources'}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {data.topVendors.length === 0 ? (
@@ -359,8 +364,8 @@ export default function FinancialReportsPage() {
                 <TabsContent value="receivables">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="bg-slate-50 border-b">
-                            <CardTitle>Accounts Receivable Status</CardTitle>
-                            <CardDescription>Customer invoices and collection status</CardDescription>
+                            <CardTitle>{locale === 'ar' ? 'حالة الحسابات المستحقة (الذمم المدينة)' : 'Accounts Receivable Status'}</CardTitle>
+                            <CardDescription>{locale === 'ar' ? 'فواتير العملاء وحالة التحصيل' : 'Customer invoices and collection status'}</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -388,8 +393,8 @@ export default function FinancialReportsPage() {
                 <TabsContent value="payables">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="bg-slate-50 border-b">
-                            <CardTitle>Accounts Payable Status</CardTitle>
-                            <CardDescription>Vendor obligations and payment schedule</CardDescription>
+                            <CardTitle>{locale === 'ar' ? 'حالة الحسابات الدائنة (الذمم الدائنة)' : 'Accounts Payable Status'}</CardTitle>
+                            <CardDescription>{locale === 'ar' ? 'التزامات الموردين وجدول الدفع' : 'Vendor obligations and payment schedule'}</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -412,8 +417,8 @@ export default function FinancialReportsPage() {
                 <TabsContent value="projects">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="bg-slate-50 border-b">
-                            <CardTitle>Project Budget Overview</CardTitle>
-                            <CardDescription>Top projects by allocated budget</CardDescription>
+                            <CardTitle>{locale === 'ar' ? 'نظرة عامة على ميزانية المشاريع' : 'Project Budget Overview'}</CardTitle>
+                            <CardDescription>{locale === 'ar' ? 'أهم المشاريع حسب الميزانية المخصصة' : 'Top projects by allocated budget'}</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 space-y-4">
                             {data.projectBudgets.length === 0 ? (

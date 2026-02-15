@@ -316,7 +316,7 @@ export function ProjectsClient({
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-full">
-                            <TrendingUp className="h-3 w-3" /> {locale === 'ar' ? 'زيادة بنسبة 12% عن الربع الثالث' : '12% increase from Q3'}
+                            <TrendingUp className="h-3 w-3" /> {locale === 'ar' ? 'زيادة بنسبة 12% عن الربع السابق' : '12% increase from last quarter'}
                         </div>
                     </CardContent>
                 </Card>
@@ -342,7 +342,7 @@ export function ProjectsClient({
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 text-xs font-bold text-amber-600">
-                            <Clock className="h-3 w-3" /> Next critical: 3 days left
+                            <Clock className="h-3 w-3" /> {locale === 'ar' ? 'الموعد المهم القادم: متبقي 3 أيام' : 'Next critical: 3 days left'}
                         </div>
                     </CardContent>
                 </Card>
@@ -353,7 +353,7 @@ export function ProjectsClient({
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <Input
-                        placeholder="Search project database..."
+                        placeholder={locale === 'ar' ? 'البحث في قاعدة بيانات المشاريع...' : 'Search project database...'}
                         className="h-14 pl-12 bg-white border-none shadow-lg text-lg rounded-2xl"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -366,7 +366,7 @@ export function ProjectsClient({
                 {filtered.length === 0 ? (
                     <div className="col-span-full py-40 text-center bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
                         <Briefcase className="h-16 w-16 text-slate-200 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-slate-400">No projects found matching your criteria.</h3>
+                        <h3 className="text-xl font-bold text-slate-400">{dict.common.noData}</h3>
                     </div>
                 ) : filtered.map(project => (
                     <Card key={project.id} className="border-none shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden bg-white/80 backdrop-blur-sm relative">
@@ -381,7 +381,7 @@ export function ProjectsClient({
                                 </div>
                                 <CardDescription className="font-bold flex items-center gap-2">
                                     <Target className="h-3 w-3 text-slate-400" />
-                                    {project.client_name || 'Strategic Internal Asset'}
+                                    {project.client_name || (locale === 'ar' ? 'أصل داخلي استراتيجي' : 'Strategic Internal Asset')}
                                 </CardDescription>
                             </div>
                             <div className="flex gap-1 items-center">
@@ -391,12 +391,12 @@ export function ProjectsClient({
                                         <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-full hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-none p-2">
-                                        <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-400">Master Control</DropdownMenuLabel>
+                                        <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-slate-400">{locale === 'ar' ? 'التحكم الرئيسي' : 'Master Control'}</DropdownMenuLabel>
                                         <DropdownMenuItem onClick={() => {
                                             setEditingProject(project)
                                             setIsEditOpen(true)
-                                        }} className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-slate-50"><Edit className="h-4 w-4" /> Comprehensive Edit</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleUpdateProjectStatus(project.id, 'Completed')} className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Finalize Project</DropdownMenuItem>
+                                        }} className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-slate-50"><Edit className="h-4 w-4" /> {locale === 'ar' ? 'تعديل شامل' : 'Comprehensive Edit'}</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleUpdateProjectStatus(project.id, 'Completed')} className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-emerald-50 text-emerald-700"><CheckCircle2 className="h-4 w-4" /> {locale === 'ar' ? 'إنهاء المشروع' : 'Finalize Project'}</DropdownMenuItem>
                                         <DropdownMenuSeparator className="my-1 bg-slate-100" />
                                         <DropdownMenuItem onClick={() => handleDeleteProject(project.id, project.title)} className="gap-2 cursor-pointer rounded-lg p-3 hover:bg-rose-50 text-rose-600"><Trash2 className="h-4 w-4" /> Terminate Lifecycle</DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -404,26 +404,39 @@ export function ProjectsClient({
                             </div>
                         </CardHeader>
                         <CardContent className="pt-2">
-                            <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 min-h-[40px] mb-6">
-                                {project.description || 'No detailed scope documentation available for this operational unit yet.'}
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                {project.description || (locale === 'ar' ? 'لا يوجد توثيق مفصل لنطاق هذا القسم التشغيلي حالياً.' : 'No detailed scope documentation available for this operational unit yet.')}
                             </p>
 
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-end mb-1">
-                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Project Threshold (Budget)</span>
-                                    <span className="text-lg font-black text-slate-900">{formatMoney(project.budget || 0)}</span>
+                            <div className="grid grid-cols-2 gap-6 py-6 border-y border-slate-50">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{locale === 'ar' ? 'حد المشروع (الميزانية)' : 'PROJECT THRESHOLD (BUDGET)'}</p>
+                                    <p className="text-lg font-black text-slate-800">{currency} {(project.budget || 0).toLocaleString()}</p>
                                 </div>
-                                <Progress value={35} className="h-2 bg-slate-100 [&>div]:bg-indigo-600 shadow-inner" />
+                                <div className="space-y-1 text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{locale === 'ar' ? 'الموعد النهائي المستهدف' : 'TARGET DEADLINE'}</p>
+                                    <p className="text-sm font-bold text-slate-600">{project.deadline ? format(new Date(project.deadline), "MMM dd yyyy") : '--'}</p>
+                                </div>
                             </div>
+
+                            <CardContent className="px-0 pt-6 pb-0 flex items-center justify-between">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push(`/projects/${project.id}`)}
+                                    className="text-indigo-600 font-bold hover:text-indigo-700 hover:bg-indigo-50 gap-2 p-0 h-auto"
+                                >
+                                    <ArrowRight className="h-4 w-4" /> {locale === 'ar' ? 'لوحة تحكم الموقع' : 'Site Console'}
+                                </Button>
+                                <div className="flex -space-x-2">
+                                    {/* Placeholder for avatars */}
+                                </div>
+                            </CardContent>
                         </CardContent>
                         <CardFooter className="bg-slate-50/50 border-t border-slate-100 flex items-center justify-between py-4 group-hover:bg-indigo-50/30 transition-colors">
                             <div className="flex items-center gap-4">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase text-slate-400">Target Deadline</span>
-                                    <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                                        <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                                        {project.deadline ? format(new Date(project.deadline), "dd MMM yyyy") : 'UNSCHEDULED'}
-                                    </span>
+                                    <span className="text-[10px] font-bold uppercase text-slate-400">Project Progress</span>
+                                    <Progress value={35} className="h-2 bg-slate-100 [&>div]:bg-indigo-600 shadow-inner w-24" />
                                 </div>
                             </div>
                             <Button

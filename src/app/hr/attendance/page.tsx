@@ -334,9 +334,9 @@ export default function AttendancePage() {
                     <Card className="border-rose-100 bg-rose-50/10">
                         <CardHeader>
                             <CardTitle className="text-rose-700 flex items-center gap-2">
-                                <ShieldAlert className="h-5 w-5" /> Security Violations Detected
+                                <ShieldAlert className="h-5 w-5" /> {locale === 'ar' ? 'تم اكتشاف انتهاكات أمنية' : 'Security Violations Detected'}
                             </CardTitle>
-                            <CardDescription>Real-time geofence and biometric verification failures.</CardDescription>
+                            <CardDescription>{locale === 'ar' ? 'فشل التحقق من الجدار الجغرافي والقياسات الحيوية في الوقت الفعلي.' : 'Real-time geofence and biometric verification failures.'}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
@@ -348,7 +348,9 @@ export default function AttendancePage() {
                                             </div>
                                             <div>
                                                 <div className="font-bold">{v.employee?.full_name}</div>
-                                                <div className="text-xs text-rose-600">Geofence Violation: {(v as any).distance_meters}m outside radius</div>
+                                                <div className="text-xs text-rose-600">
+                                                    {locale === 'ar' ? `انتهاك الموقع: ${(v as any).distance_meters} م خارج النطاق` : `Geofence Violation: ${(v as any).distance_meters}m outside radius`}
+                                                </div>
                                             </div>
                                         </div>
                                         <Badge variant="destructive">Violation</Badge>
@@ -356,7 +358,7 @@ export default function AttendancePage() {
                                 ))}
                                 {records.filter(r => (r as any).is_within_radius === false).length === 0 && (
                                     <div className="text-center py-10 text-slate-400 font-medium">
-                                        No security violations recorded today.
+                                        {locale === 'ar' ? 'لا توجد انتهاكات أمنية مسجلة اليوم.' : 'No security violations recorded today.'}
                                     </div>
                                 )}
                             </div>
@@ -367,7 +369,7 @@ export default function AttendancePage() {
                 <TabsContent value="insights">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card>
-                            <CardHeader><CardTitle>Top Punctuality</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{locale === 'ar' ? 'الأكثر انضباطاً' : 'Top Punctuality'}</CardTitle></CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {records.slice(0, 3).map(r => (
@@ -380,7 +382,7 @@ export default function AttendancePage() {
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardHeader><CardTitle>Attendance Trends</CardTitle></CardHeader>
+                            <CardHeader><CardTitle>{locale === 'ar' ? 'توجهات الحضور' : 'Attendance Trends'}</CardTitle></CardHeader>
                             <CardContent className="h-40 flex items-end gap-2 justify-between px-4">
                                 {[40, 70, 45, 90, 65, 80, 85].map((h, i) => (
                                     <div key={i} className="w-full bg-indigo-100 rounded-t-sm relative group cursor-pointer" style={{ height: `${h}%` }}>
