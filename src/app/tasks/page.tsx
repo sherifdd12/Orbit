@@ -80,6 +80,7 @@ interface Task {
 
 export default function TasksPage() {
     const { dict, locale } = useLanguage()
+    const isArabic = locale === 'ar'
     const [tasks, setTasks] = React.useState<Task[]>([])
     const [loading, setLoading] = React.useState(true)
     const [isAddOpen, setIsAddOpen] = React.useState(false)
@@ -210,7 +211,12 @@ export default function TasksPage() {
             'High': 'bg-orange-100 text-orange-700',
             'Critical': 'bg-rose-100 text-rose-700 animate-pulse'
         }
-        return <Badge className={`text-[10px] font-bold border-none shadow-sm ${colors[p] || 'bg-slate-100'}`}>{p}</Badge>
+        const label = p === 'Low' ? dict.tasks.low :
+            p === 'Medium' ? dict.tasks.medium :
+                p === 'High' ? dict.tasks.high :
+                    p === 'Critical' ? dict.tasks.urgent : p
+
+        return <Badge className={`text-[10px] font-bold border-none shadow-sm ${colors[p] || 'bg-slate-100'}`}>{label}</Badge>
     }
 
     const filtered = tasks.filter(t => {
@@ -228,59 +234,61 @@ export default function TasksPage() {
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-black tracking-tight text-slate-900">Task Performance</h2>
-                    <p className="text-slate-500 font-medium">Coordinate deliverables, assign stakeholders, and track operational progress.</p>
+                    <h2 className="text-4xl font-black tracking-tight text-slate-900">{dict.sidebar.tasks}</h2>
+                    <p className="text-slate-500 font-medium">
+                        {isArabic ? 'تنسيق التسليمات، وتعيين أصحاب المصلحة، وتتبع التقدم العملياتي.' : 'Coordinate deliverables, assign stakeholders, and track operational progress.'}
+                    </p>
                 </div>
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
                         <Button className="bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-100 border-none h-11 px-6">
-                            <Plus className="mr-2 h-4 w-4" /> New Operational Task
+                            <Plus className="mr-2 h-4 w-4" /> {dict.tasks.newTask}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-xl">
                         <DialogHeader>
-                            <DialogTitle>Define Deliverable</DialogTitle>
+                            <DialogTitle>{dict.tasks.newTask}</DialogTitle>
                         </DialogHeader>
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <div className="space-y-2 col-span-2">
-                                <Label>Task Title</Label>
+                                <Label>{dict.tasks.taskName}</Label>
                                 <Input value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label>Description</Label>
+                                <Label>{dict.common.description}</Label>
                                 <Input value={newTask.description} onChange={e => setNewTask({ ...newTask, description: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Project Association</Label>
+                                <Label>{dict.projects.projectName}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.project_id} onChange={e => setNewTask({ ...newTask, project_id: e.target.value })}>
-                                    <option value="">None / General</option>
+                                    <option value="">{isArabic ? 'عام / غير محدد' : 'None / General'}</option>
                                     {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Assign Stakeholder</Label>
+                                <Label>{dict.tasks.assignee}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.assignee_id} onChange={e => setNewTask({ ...newTask, assignee_id: e.target.value })}>
-                                    <option value="">Unassigned</option>
+                                    <option value="">{isArabic ? 'غير معين' : 'Unassigned'}</option>
                                     {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Priority</Label>
+                                <Label>{dict.tasks.priority}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value as any })}>
-                                    <option value="Low">Low</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                    <option value="Critical">Critical</option>
+                                    <option value="Low">{dict.tasks.low}</option>
+                                    <option value="Medium">{dict.tasks.medium}</option>
+                                    <option value="High">{dict.tasks.high}</option>
+                                    <option value="Critical">{dict.tasks.urgent}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Due Date</Label>
+                                <Label>{dict.tasks.dueDate}</Label>
                                 <Input type="date" value={newTask.due_date} onChange={e => setNewTask({ ...newTask, due_date: e.target.value })} />
                             </div>
                         </div>
                         <DialogFooter>
                             <Button variant="ghost" onClick={() => setIsAddOpen(false)}>{dict.common.cancel}</Button>
-                            <Button onClick={handleAddTask} className="bg-slate-900 text-white font-bold">Initialize Task</Button>
+                            <Button onClick={handleAddTask} className="bg-slate-900 text-white font-bold">{dict.common.add} {dict.sidebar.tasks}</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -289,25 +297,25 @@ export default function TasksPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight">Total Tasks</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight">{isArabic ? 'إجمالي المهام' : 'Total Tasks'}</CardDescription>
                         <CardTitle className="text-2xl font-black">{tasks.length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-blue-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-blue-600">Pending</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-blue-600">{dict.tasks.todo} & {dict.tasks.inProgress}</CardDescription>
                         <CardTitle className="text-2xl font-black text-blue-700">{tasks.filter(t => t.status !== 'Done').length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-emerald-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-emerald-600">Finalized</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-emerald-600">{dict.tasks.done}</CardDescription>
                         <CardTitle className="text-2xl font-black text-emerald-700">{tasks.filter(t => t.status === 'Done').length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-rose-50/50">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-rose-600">Critical Priority</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase tracking-tight text-rose-600">{dict.tasks.urgent}</CardDescription>
                         <CardTitle className="text-2xl font-black text-rose-700">{tasks.filter(t => t.priority === 'Critical').length}</CardTitle>
                     </CardHeader>
                 </Card>
@@ -317,7 +325,7 @@ export default function TasksPage() {
                 <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <Input
-                        placeholder="Search tasks, project titles, assignees..."
+                        placeholder={isArabic ? 'البحث في المهام، المشاريع، المسؤولين...' : 'Search tasks, project titles, assignees...'}
                         className="h-14 pl-12 bg-white border-none shadow-xl text-lg rounded-2xl"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -326,27 +334,27 @@ export default function TasksPage() {
                 <div className="flex gap-2">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="h-14 w-40 bg-white border-none shadow-xl rounded-2xl font-bold">
-                            <SelectValue placeholder="Status" />
+                            <SelectValue placeholder={dict.common.status} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="All">All Statuses</SelectItem>
-                            <SelectItem value="To Do">To Do</SelectItem>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Review">Review</SelectItem>
-                            <SelectItem value="Done">Done</SelectItem>
+                            <SelectItem value="All">{dict.common.all}</SelectItem>
+                            <SelectItem value="To Do">{dict.tasks.todo}</SelectItem>
+                            <SelectItem value="In Progress">{dict.tasks.inProgress}</SelectItem>
+                            <SelectItem value="Review">{isArabic ? 'مراجعة' : 'Review'}</SelectItem>
+                            <SelectItem value="Done">{dict.tasks.done}</SelectItem>
                         </SelectContent>
                     </Select>
 
                     <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                         <SelectTrigger className="h-14 w-40 bg-white border-none shadow-xl rounded-2xl font-bold">
-                            <SelectValue placeholder="Priority" />
+                            <SelectValue placeholder={dict.tasks.priority} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="All">All Priorities</SelectItem>
-                            <SelectItem value="Low">Low</SelectItem>
-                            <SelectItem value="Medium">Medium</SelectItem>
-                            <SelectItem value="High">High</SelectItem>
-                            <SelectItem value="Critical">Critical</SelectItem>
+                            <SelectItem value="All">{dict.common.all}</SelectItem>
+                            <SelectItem value="Low">{dict.tasks.low}</SelectItem>
+                            <SelectItem value="Medium">{dict.tasks.medium}</SelectItem>
+                            <SelectItem value="High">{dict.tasks.high}</SelectItem>
+                            <SelectItem value="Critical">{dict.tasks.urgent}</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -390,12 +398,12 @@ export default function TasksPage() {
                                             )}
                                             {task.profiles?.full_name && (
                                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                                    <User className="h-3 w-3" /> Assigned to {task.profiles.full_name}
+                                                    <User className="h-3 w-3" /> {isArabic ? 'تعيين لـ' : 'Assigned to'} {task.profiles.full_name}
                                                 </div>
                                             )}
                                             {task.due_date && (
                                                 <div className="flex items-center gap-1.5 text-xs font-medium">
-                                                    <Calendar className="h-3 w-3" /> {format(new Date(task.due_date), "MMM dd, yyyy")}
+                                                    <Calendar className="h-3 w-3" /> {format(new Date(task.due_date), isArabic ? "dd MMM yyyy" : "MMM dd, yyyy")}
                                                 </div>
                                             )}
                                         </div>
@@ -433,56 +441,59 @@ export default function TasksPage() {
                     {filtered.length === 0 && (
                         <div className="text-center py-40 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
                             <AlertCircle className="h-16 w-16 text-slate-200 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-slate-400 leading-relaxed">System clear. <br /> No active tasks matching your filter.</h3>
+                            <h3 className="text-xl font-bold text-slate-400 leading-relaxed">
+                                {isArabic ? 'النظام خالي من المهام.' : 'System clear.'} <br />
+                                {isArabic ? 'لا توجد مهام نشطة تطابق البحث.' : 'No active tasks matching your filter.'}
+                            </h3>
                         </div>
                     )}
                 </div>
             )}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-w-xl">
-                    <DialogHeader><DialogTitle>Edit Deliverable</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>{dict.tasks.editTask}</DialogTitle></DialogHeader>
                     {editingTask && (
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <div className="space-y-2 col-span-2">
-                                <Label>Task Title</Label>
+                                <Label>{dict.tasks.taskName}</Label>
                                 <Input value={editingTask.title} onChange={e => setEditingTask({ ...editingTask, title: e.target.value })} />
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label>Description</Label>
+                                <Label>{dict.common.description}</Label>
                                 <Input value={editingTask.description} onChange={e => setEditingTask({ ...editingTask, description: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Project Association</Label>
+                                <Label>{dict.projects.projectName}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.project_id || ''} onChange={e => setEditingTask({ ...editingTask, project_id: e.target.value })}>
-                                    <option value="">None / General</option>
+                                    <option value="">{isArabic ? 'عام / غير محدد' : 'None / General'}</option>
                                     {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Assign Stakeholder</Label>
+                                <Label>{dict.tasks.assignee}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.assignee_id || ''} onChange={e => setEditingTask({ ...editingTask, assignee_id: e.target.value })}>
-                                    <option value="">Unassigned</option>
+                                    <option value="">{isArabic ? 'غير معين' : 'Unassigned'}</option>
                                     {users.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Priority</Label>
+                                <Label>{dict.tasks.priority}</Label>
                                 <select className="w-full border rounded-md h-10 px-3 bg-white" value={editingTask.priority} onChange={e => setEditingTask({ ...editingTask, priority: e.target.value as any })}>
-                                    <option value="Low">Low</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                    <option value="Critical">Critical</option>
+                                    <option value="Low">{dict.tasks.low}</option>
+                                    <option value="Medium">{dict.tasks.medium}</option>
+                                    <option value="High">{dict.tasks.high}</option>
+                                    <option value="Critical">{dict.tasks.urgent}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Due Date</Label>
+                                <Label>{dict.tasks.dueDate}</Label>
                                 <Input type="date" value={editingTask.due_date} onChange={e => setEditingTask({ ...editingTask, due_date: e.target.value })} />
                             </div>
                         </div>
                     )}
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
-                        <Button onClick={handleEditTask} className="bg-slate-900 text-white font-bold">Save Changes</Button>
+                        <Button onClick={handleEditTask} className="bg-slate-900 text-white font-bold">{dict.common.save}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

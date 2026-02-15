@@ -83,6 +83,7 @@ interface Item {
 
 export default function InventoryPage() {
     const { dict, locale } = useLanguage()
+    const isArabic = locale === 'ar'
     const { currency, formatMoney } = useSettings()
     const [items, setItems] = React.useState<Item[]>([])
     const [loading, setLoading] = React.useState(true)
@@ -244,7 +245,9 @@ export default function InventoryPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{dict.inventory.title}</h2>
-                    <p className="text-muted-foreground text-sm">Control your stock levels, track movements, and manage item master data.</p>
+                    <p className="text-muted-foreground text-sm">
+                        {isArabic ? 'التحكم في مستويات المخزون، تتبع الحركات، وإدارة البيانات الأساسية للأصناف.' : 'Control your stock levels, track movements, and manage item master data.'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" className="gap-2" onClick={handleExport}><Download className="h-4 w-4" /> {dict.common.export}</Button>
@@ -260,30 +263,30 @@ export default function InventoryPage() {
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-xl">
-                            <DialogHeader><DialogTitle>Register New Component / Product</DialogTitle></DialogHeader>
+                            <DialogHeader><DialogTitle>{isArabic ? 'تسجيل صنف / منتج جديد' : 'Register New Component / Product'}</DialogTitle></DialogHeader>
                             <div className="grid grid-cols-2 gap-4 py-4">
                                 <div className="space-y-2 col-span-2">
-                                    <Label>Item Name</Label>
+                                    <Label>{dict.inventory.itemName}</Label>
                                     <Input value={newItem.name} onChange={e => setNewItem({ ...newItem, name: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>SKU / Barcode</Label>
+                                    <Label>{dict.inventory.sku} / {dict.inventory.barcode}</Label>
                                     <Input value={newItem.sku} onChange={e => setNewItem({ ...newItem, sku: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Category</Label>
+                                    <Label>{dict.inventory.category}</Label>
                                     <Input value={newItem.category} onChange={e => setNewItem({ ...newItem, category: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Initial Stock</Label>
+                                    <Label>{isArabic ? 'المخزون الابتدائي' : 'Initial Stock'}</Label>
                                     <Input type="number" value={newItem.stock_quantity} onChange={e => setNewItem({ ...newItem, stock_quantity: Number(e.target.value) })} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Unit of Measure (UOM)</Label>
-                                    <Input placeholder="e.g. Pcs, Kg, Box" value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} />
+                                    <Label>{isArabic ? 'وحدة القياس' : 'Unit of Measure (UOM)'}</Label>
+                                    <Input placeholder={isArabic ? 'مثال: قطعة، كجم، صندوق' : 'e.g. Pcs, Kg, Box'} value={newItem.uom} onChange={e => setNewItem({ ...newItem, uom: e.target.value })} />
                                 </div>
                                 <div className="space-y-2 col-span-2">
-                                    <Label>Average Cost ({currency})</Label>
+                                    <Label>{dict.inventory.avgCost} ({currency})</Label>
                                     <Input type="number" step="0.01" value={newItem.avg_cost} onChange={e => setNewItem({ ...newItem, avg_cost: Number(e.target.value) })} />
                                 </div>
                             </div>
@@ -299,27 +302,27 @@ export default function InventoryPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-slate-500">Total SKU Count</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase text-slate-500">{isArabic ? 'إجمالي عدد الأصناف' : 'Total SKU Count'}</CardDescription>
                         <CardTitle className="text-2xl font-bold">{stats.totalItems}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-rose-50/50 border-rose-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-rose-600 flex items-center gap-2">
-                            <AlertCircle className="h-3 w-3" /> Low Stock Alerts
+                            <AlertCircle className="h-3 w-3" /> {dict.inventory.lowStock}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-rose-700">{stats.lowStock}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-emerald-50/50 border-emerald-100">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">Total Inventory Value</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-emerald-700">{stats.totalValue.toLocaleString()} {currency}</CardTitle>
+                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">{isArabic ? 'إجمالي قيمة المخزون' : 'Total Inventory Value'}</CardDescription>
+                        <CardTitle className="text-2xl font-bold text-emerald-700">{formatMoney(stats.totalValue)}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-slate-500">Categories</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase text-slate-500">{isArabic ? 'الفئات' : 'Categories'}</CardDescription>
                         <CardTitle className="text-2xl font-bold">{stats.categories}</CardTitle>
                     </CardHeader>
                 </Card>
@@ -355,7 +358,7 @@ export default function InventoryPage() {
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">All Categories</SelectItem>
+                                    <SelectItem value="All">{isArabic ? 'جميع الفئات' : 'All Categories'}</SelectItem>
                                     {categories.map(c => (
                                         <SelectItem key={c} value={c}>{c}</SelectItem>
                                     ))}
@@ -371,10 +374,10 @@ export default function InventoryPage() {
                                 <TableRow className="bg-slate-50/20">
                                     <TableHead className="pl-6 w-12"></TableHead>
                                     <TableHead>{dict.inventory.itemName}</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead className="text-right">On Hand</TableHead>
-                                    <TableHead className="text-right">Avg Cost</TableHead>
-                                    <TableHead className="text-right">Total Value</TableHead>
+                                    <TableHead>{dict.inventory.category}</TableHead>
+                                    <TableHead className="text-right">{isArabic ? 'المتوفر' : 'On Hand'}</TableHead>
+                                    <TableHead className="text-right">{dict.inventory.avgCost}</TableHead>
+                                    <TableHead className="text-right">{isArabic ? 'القيمة الإجمالية' : 'Total Value'}</TableHead>
                                     <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -400,7 +403,7 @@ export default function InventoryPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-medium h-5">
-                                                {item.category || 'General'}
+                                                {item.category || (isArabic ? 'عام' : 'General')}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -410,7 +413,7 @@ export default function InventoryPage() {
                                                 </span>
                                                 {item.stock_quantity < 10 && (
                                                     <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-0.5">
-                                                        <TrendingDown className="h-2 w-2" /> REORDER
+                                                        <TrendingDown className="h-2 w-2" /> {isArabic ? 'إعادة طلب' : 'REORDER'}
                                                     </span>
                                                 )}
                                             </div>
@@ -460,7 +463,7 @@ export default function InventoryPage() {
             <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Inventory Correction: {selectedItemForAdjustment?.name}</DialogTitle>
+                        <DialogTitle>{isArabic ? 'تصحيح المخزون' : 'Inventory Correction'}: {selectedItemForAdjustment?.name}</DialogTitle>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -469,14 +472,14 @@ export default function InventoryPage() {
                                 className={adjustmentType === 'add' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
                                 onClick={() => setAdjustmentType('add')}
                             >
-                                <Plus className="h-4 w-4 mr-2" /> Add Stock
+                                <Plus className="h-4 w-4 mr-2" /> {isArabic ? 'إضافة مخزون' : 'Add Stock'}
                             </Button>
                             <Button
                                 variant={adjustmentType === 'subtract' ? 'default' : 'outline'}
                                 className={adjustmentType === 'subtract' ? 'bg-rose-600 hover:bg-rose-700' : ''}
                                 onClick={() => setAdjustmentType('subtract')}
                             >
-                                <TrendingDown className="h-4 w-4 mr-2" /> Subtract Stock
+                                <TrendingDown className="h-4 w-4 mr-2" /> {isArabic ? 'صرف مخزون' : 'Subtract Stock'}
                             </Button>
                         </div>
                         <div className="space-y-2">
@@ -488,7 +491,7 @@ export default function InventoryPage() {
                             />
                         </div>
                         <div className="p-3 bg-slate-50 rounded-lg text-sm">
-                            New Projected Stock: <span className="font-bold">
+                            {isArabic ? 'المخزون المتوقع الجديد' : 'New Projected Stock'}: <span className="font-bold">
                                 {adjustmentType === 'add'
                                     ? (selectedItemForAdjustment?.stock_quantity || 0) + adjustmentQuantity
                                     : (selectedItemForAdjustment?.stock_quantity || 0) - adjustmentQuantity} {selectedItemForAdjustment?.uom}
@@ -503,34 +506,34 @@ export default function InventoryPage() {
             </Dialog>
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-w-xl">
-                    <DialogHeader><DialogTitle>Edit Item Master Data</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>{isArabic ? 'تعديل البيانات الأساسية للصنف' : 'Edit Item Master Data'}</DialogTitle></DialogHeader>
                     {editingItem && (
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <div className="space-y-2 col-span-2">
-                                <Label>Item Name</Label>
+                                <Label>{dict.inventory.itemName}</Label>
                                 <Input value={editingItem.name} onChange={e => setEditingItem({ ...editingItem, name: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>SKU / Barcode</Label>
+                                <Label>{dict.inventory.sku} / {dict.inventory.barcode}</Label>
                                 <Input value={editingItem.sku} onChange={e => setEditingItem({ ...editingItem, sku: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Category</Label>
+                                <Label>{dict.inventory.category}</Label>
                                 <Input value={editingItem.category} onChange={e => setEditingItem({ ...editingItem, category: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Unit of Measure (UOM)</Label>
+                                <Label>{isArabic ? 'وحدة القياس' : 'Unit of Measure (UOM)'}</Label>
                                 <Input value={editingItem.uom} onChange={e => setEditingItem({ ...editingItem, uom: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Average Cost ({currency})</Label>
+                                <Label>{dict.inventory.avgCost} ({currency})</Label>
                                 <Input type="number" step="0.01" value={editingItem.avg_cost} onChange={e => setEditingItem({ ...editingItem, avg_cost: Number(e.target.value) })} />
                             </div>
                         </div>
                     )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)}>{dict.common.cancel}</Button>
-                        <Button onClick={handleEditItem}>{dict.common.save} Changes</Button>
+                        <Button onClick={handleEditItem}>{dict.common.save}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -24,12 +24,29 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Forcing record_id to be TEXT
+-- Forcing record_id to be TEXT and module to be NULLABLE if they exist
 DO $$
 BEGIN
-    ALTER TABLE public.audit_logs ALTER COLUMN record_id TYPE TEXT;
-EXCEPTION WHEN OTHERS THEN 
-    NULL;
+    -- Fix record_id
+    BEGIN
+        ALTER TABLE public.audit_logs ALTER COLUMN record_id TYPE TEXT;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+
+    -- Fix module column constraint (The cause of "null value in column module violates not-null constraint")
+    BEGIN
+        ALTER TABLE public.audit_logs ALTER COLUMN module DROP NOT NULL;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+
+    -- Safety: Ensure other common columns are nullable if they exist
+    BEGIN
+        ALTER TABLE public.audit_logs ALTER COLUMN ip_address DROP NOT NULL;
+        ALTER TABLE public.audit_logs ALTER COLUMN user_agent DROP NOT NULL;
+        ALTER TABLE public.audit_logs ALTER COLUMN changed_fields DROP NOT NULL;
+        ALTER TABLE public.audit_logs ALTER COLUMN changed_fields SET DEFAULT ARRAY[]::TEXT[];
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
 END $$;
 
 -- 3. PROFILES SYSTEM
@@ -74,8 +91,14 @@ CREATE TABLE IF NOT EXISTS public.leads (
     contact_name TEXT NOT NULL,
     email TEXT,
     phone TEXT,
+    mobile TEXT,
+    source TEXT DEFAULT 'Website',
     status TEXT DEFAULT 'New',
     priority TEXT DEFAULT 'Medium',
+    estimated_value DECIMAL(15,3) DEFAULT 0,
+    expected_close_date DATE,
+    industry TEXT,
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -85,19 +108,49 @@ CREATE TABLE IF NOT EXISTS public.opportunities (
     name TEXT NOT NULL,
     customer_id UUID REFERENCES public.customers(id),
     stage TEXT DEFAULT 'Prospecting',
+    probability INTEGER DEFAULT 10,
     amount DECIMAL(15,3) DEFAULT 0,
     expected_close_date DATE,
+    source TEXT,
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.campaigns (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
+    type TEXT DEFAULT 'Email',
     status TEXT DEFAULT 'Planning',
     budget DECIMAL(15,3) DEFAULT 0,
     actual_cost DECIMAL(15,3) DEFAULT 0,
+    expected_revenue DECIMAL(15,3) DEFAULT 0,
+    start_date DATE,
+    end_date DATE,
+    description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Ensuring CRM columns exist (for existing tables)
+DO $$
+BEGIN
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS mobile TEXT;
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'Website';
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS estimated_value DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS expected_close_date DATE;
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS industry TEXT;
+    ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS notes TEXT;
+    
+    ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS probability INTEGER DEFAULT 10;
+    ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS source TEXT;
+    ALTER TABLE public.opportunities ADD COLUMN IF NOT EXISTS notes TEXT;
+    
+    ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'Email';
+    ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS expected_revenue DECIMAL(15,3) DEFAULT 0;
+    ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS start_date DATE;
+    ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS end_date DATE;
+    ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS description TEXT;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
 
 -- 5. INVENTORY & WAREHOUSING
 CREATE TABLE IF NOT EXISTS public.vendors (

@@ -132,36 +132,47 @@ interface Campaign {
     created_at: string
 }
 
-const leadStatusConfig: Record<string, { color: string; label: string }> = {
-    New: { color: 'bg-blue-100 text-blue-700', label: 'New' },
-    Contacted: { color: 'bg-indigo-100 text-indigo-700', label: 'Contacted' },
-    Qualified: { color: 'bg-purple-100 text-purple-700', label: 'Qualified' },
-    Proposal: { color: 'bg-amber-100 text-amber-700', label: 'Proposal' },
-    Negotiation: { color: 'bg-orange-100 text-orange-700', label: 'Negotiation' },
-    Won: { color: 'bg-emerald-100 text-emerald-700', label: 'Won' },
-    Lost: { color: 'bg-rose-100 text-rose-700', label: 'Lost' },
-}
 
-const opportunityStageConfig: Record<string, { color: string; label: string; probability: number }> = {
-    Prospecting: { color: 'bg-slate-100 text-slate-700', label: 'Prospecting', probability: 10 },
-    Qualification: { color: 'bg-blue-100 text-blue-700', label: 'Qualification', probability: 25 },
-    Proposal: { color: 'bg-indigo-100 text-indigo-700', label: 'Proposal', probability: 50 },
-    Negotiation: { color: 'bg-amber-100 text-amber-700', label: 'Negotiation', probability: 75 },
-    ClosedWon: { color: 'bg-emerald-100 text-emerald-700', label: 'Closed Won', probability: 100 },
-    ClosedLost: { color: 'bg-rose-100 text-rose-700', label: 'Closed Lost', probability: 0 },
-}
-
-const priorityConfig: Record<string, { color: string; label: string }> = {
-    Low: { color: 'bg-slate-100 text-slate-600', label: 'Low' },
-    Medium: { color: 'bg-blue-100 text-blue-600', label: 'Medium' },
-    High: { color: 'bg-amber-100 text-amber-600', label: 'High' },
-    Urgent: { color: 'bg-rose-100 text-rose-600', label: 'Urgent' },
-}
 
 export default function CRMPage() {
     const { dict, locale } = useLanguage()
-    const { formatMoney } = useSettings()
+    const { formatMoney, currency } = useSettings()
     const isArabic = locale === 'ar'
+
+    const getLeadStatusConfig = (status: string) => {
+        const configs: Record<string, { color: string; label: string }> = {
+            New: { color: 'bg-blue-100 text-blue-700', label: dict.common.new },
+            Contacted: { color: 'bg-indigo-100 text-indigo-700', label: isArabic ? 'تم التواصل' : 'Contacted' },
+            Qualified: { color: 'bg-purple-100 text-purple-700', label: isArabic ? 'مؤهل' : 'Qualified' },
+            Proposal: { color: 'bg-amber-100 text-amber-700', label: dict.crm.proposal },
+            Negotiation: { color: 'bg-orange-100 text-orange-700', label: dict.crm.negotiation },
+            Won: { color: 'bg-emerald-100 text-emerald-700', label: dict.crm.closedWon },
+            Lost: { color: 'bg-rose-100 text-rose-700', label: dict.crm.closedLost },
+        }
+        return configs[status] || { color: 'bg-slate-100 text-slate-700', label: status }
+    }
+
+    const getOpportunityStageConfig = (stage: string) => {
+        const configs: Record<string, { color: string; label: string; probability: number }> = {
+            Prospecting: { color: 'bg-slate-100 text-slate-700', label: dict.crm.prospecting, probability: 10 },
+            Qualification: { color: 'bg-blue-100 text-blue-700', label: dict.crm.qualification, probability: 25 },
+            Proposal: { color: 'bg-indigo-100 text-indigo-700', label: dict.crm.proposal, probability: 50 },
+            Negotiation: { color: 'bg-amber-100 text-amber-700', label: dict.crm.negotiation, probability: 75 },
+            ClosedWon: { color: 'bg-emerald-100 text-emerald-700', label: dict.crm.closedWon, probability: 100 },
+            ClosedLost: { color: 'bg-rose-100 text-rose-700', label: dict.crm.closedLost, probability: 0 },
+        }
+        return configs[stage] || { color: 'bg-slate-100 text-slate-700', label: stage, probability: 0 }
+    }
+
+    const getPriorityConfig = (priority: string) => {
+        const configs: Record<string, { color: string; label: string }> = {
+            Low: { color: 'bg-slate-100 text-slate-600', label: dict.tasks.low },
+            Medium: { color: 'bg-blue-100 text-blue-600', label: dict.tasks.medium },
+            High: { color: 'bg-amber-100 text-amber-600', label: dict.tasks.high },
+            Urgent: { color: 'bg-rose-100 text-rose-600', label: dict.tasks.urgent },
+        }
+        return configs[priority] || { color: 'bg-slate-100 text-slate-600', label: priority }
+    }
 
     const [leads, setLeads] = React.useState<Lead[]>([])
     const [opportunities, setOpportunities] = React.useState<Opportunity[]>([])
@@ -330,7 +341,7 @@ export default function CRMPage() {
     }
 
     const handleUpdateOpportunityStage = async (opportunity: Opportunity, newStage: string) => {
-        const probability = opportunityStageConfig[newStage]?.probability || 0
+        const probability = getOpportunityStageConfig(newStage)?.probability || 0
         const updates: Record<string, unknown> = { stage: newStage, probability }
         if (newStage === 'ClosedWon' || newStage === 'ClosedLost') {
             updates.actual_close_date = format(new Date(), 'yyyy-MM-dd')
@@ -549,13 +560,13 @@ export default function CRMPage() {
                                             >
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Website">Website</SelectItem>
-                                                    <SelectItem value="Referral">Referral</SelectItem>
-                                                    <SelectItem value="SocialMedia">Social Media</SelectItem>
-                                                    <SelectItem value="Exhibition">Exhibition</SelectItem>
-                                                    <SelectItem value="Advertising">Advertising</SelectItem>
-                                                    <SelectItem value="ColdCall">Cold Call</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    <SelectItem value="Website">{dict.crm.leadSource.website}</SelectItem>
+                                                    <SelectItem value="Referral">{dict.crm.leadSource.referral}</SelectItem>
+                                                    <SelectItem value="SocialMedia">{dict.crm.leadSource.social}</SelectItem>
+                                                    <SelectItem value="Exhibition">{isArabic ? 'معرض' : 'Exhibition'}</SelectItem>
+                                                    <SelectItem value="Advertising">{dict.crm.leadSource.advertising}</SelectItem>
+                                                    <SelectItem value="ColdCall">{dict.crm.leadSource.coldCall}</SelectItem>
+                                                    <SelectItem value="Other">{dict.crm.leadSource.other}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -567,10 +578,10 @@ export default function CRMPage() {
                                             >
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Low">Low</SelectItem>
-                                                    <SelectItem value="Medium">Medium</SelectItem>
-                                                    <SelectItem value="High">High</SelectItem>
-                                                    <SelectItem value="Urgent">Urgent</SelectItem>
+                                                    <SelectItem value="Low">{dict.tasks.low}</SelectItem>
+                                                    <SelectItem value="Medium">{dict.tasks.medium}</SelectItem>
+                                                    <SelectItem value="High">{dict.tasks.high}</SelectItem>
+                                                    <SelectItem value="Urgent">{dict.tasks.urgent}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -611,20 +622,15 @@ export default function CRMPage() {
                             <Dialog open={isOpportunityDialogOpen} onOpenChange={setIsOpportunityDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg">
-                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newOpportunity}
+                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newOpp}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-xl">
-                                    <DialogHeader>
-                                        <DialogTitle>{dict.crm.newOpportunity}</DialogTitle>
-                                    </DialogHeader>
+                                    <DialogHeader><DialogTitle>{dict.crm.newOpp}</DialogTitle></DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
-                                            <Label>{isArabic ? 'اسم الفرصة' : 'Opportunity Name'} *</Label>
-                                            <Input
-                                                value={newOpportunity.name}
-                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, name: e.target.value })}
-                                            />
+                                            <Label>{isArabic ? 'عنوان الفرصة' : 'Opportunity Name'}</Label>
+                                            <Input value={newOpportunity.name} onChange={e => setNewOpportunity({ ...newOpportunity, name: e.target.value })} placeholder={isArabic ? 'مثال: نظام الطاقة المتجددة' : 'e.g. Solar Power System'} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>{isArabic ? 'المرحلة' : 'Stage'}</Label>
@@ -633,15 +639,15 @@ export default function CRMPage() {
                                                 onValueChange={(v) => setNewOpportunity({
                                                     ...newOpportunity,
                                                     stage: v,
-                                                    probability: opportunityStageConfig[v]?.probability || 0
+                                                    probability: getOpportunityStageConfig(v)?.probability || 0
                                                 })}
                                             >
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Prospecting">Prospecting</SelectItem>
-                                                    <SelectItem value="Qualification">Qualification</SelectItem>
-                                                    <SelectItem value="Proposal">Proposal</SelectItem>
-                                                    <SelectItem value="Negotiation">Negotiation</SelectItem>
+                                                    <SelectItem value="Prospecting">{dict.crm.prospecting}</SelectItem>
+                                                    <SelectItem value="Qualification">{dict.crm.qualification}</SelectItem>
+                                                    <SelectItem value="Proposal">{dict.crm.proposal}</SelectItem>
+                                                    <SelectItem value="Negotiation">{dict.crm.negotiation}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -656,34 +662,17 @@ export default function CRMPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'المبلغ' : 'Amount'}</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.001"
-                                                value={newOpportunity.amount}
-                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, amount: Number(e.target.value) })}
-                                            />
+                                            <Label>{dict.crm.estimatedValue} ({currency})</Label>
+                                            <Input type="number" value={newOpportunity.amount} onChange={e => setNewOpportunity({ ...newOpportunity, amount: Number(e.target.value) })} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'تاريخ الإغلاق المتوقع' : 'Expected Close'}</Label>
-                                            <Input
-                                                type="date"
-                                                value={newOpportunity.expected_close_date}
-                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, expected_close_date: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2 col-span-2">
-                                            <Label>{isArabic ? 'ملاحظات' : 'Notes'}</Label>
-                                            <Textarea
-                                                value={newOpportunity.notes}
-                                                onChange={(e) => setNewOpportunity({ ...newOpportunity, notes: e.target.value })}
-                                                rows={2}
-                                            />
+                                            <Label>{dict.crm.expectedClose}</Label>
+                                            <Input type="date" value={newOpportunity.expected_close_date} onChange={e => setNewOpportunity({ ...newOpportunity, expected_close_date: e.target.value })} />
                                         </div>
                                     </div>
                                     <DialogFooter>
                                         <Button variant="outline" onClick={() => setIsOpportunityDialogOpen(false)}>{dict.common.cancel}</Button>
-                                        <Button onClick={handleCreateOpportunity}>{isArabic ? 'إضافة الفرصة' : 'Add Opportunity'}</Button>
+                                        <Button onClick={handleCreateOpportunity} className="bg-slate-900 text-white font-bold">{dict.crm.newOpp}</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -692,20 +681,15 @@ export default function CRMPage() {
                             <Dialog open={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-lg">
-                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newCampaign}
+                                        <Plus className="mr-2 h-4 w-4" /> {dict.crm.newCamp}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-xl">
-                                    <DialogHeader>
-                                        <DialogTitle>{dict.crm.newCampaign}</DialogTitle>
-                                    </DialogHeader>
+                                    <DialogHeader><DialogTitle>{dict.crm.newCamp}</DialogTitle></DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
-                                            <Label>{isArabic ? 'اسم الحملة' : 'Campaign Name'} *</Label>
-                                            <Input
-                                                value={newCampaign.name}
-                                                onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
-                                            />
+                                            <Label>{isArabic ? 'اسم الحملة' : 'Campaign Name'}</Label>
+                                            <Input value={newCampaign.name} onChange={e => setNewCampaign({ ...newCampaign, name: e.target.value })} placeholder={isArabic ? 'مثال: عرض الصيف 2024' : 'e.g. Summer Sale 2024'} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>{isArabic ? 'النوع' : 'Type'}</Label>
@@ -715,44 +699,23 @@ export default function CRMPage() {
                                             >
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Email">Email</SelectItem>
-                                                    <SelectItem value="Social">Social Media</SelectItem>
-                                                    <SelectItem value="Event">Event</SelectItem>
-                                                    <SelectItem value="Webinar">Webinar</SelectItem>
-                                                    <SelectItem value="Print">Print</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    <SelectItem value="Email">{isArabic ? 'بريد إلكتروني' : 'Email'}</SelectItem>
+                                                    <SelectItem value="Social">{dict.crm.leadSource.social}</SelectItem>
+                                                    <SelectItem value="Event">{isArabic ? 'فعالية' : 'Event'}</SelectItem>
+                                                    <SelectItem value="Webinar">{isArabic ? 'ندوة عبر الويب' : 'Webinar'}</SelectItem>
+                                                    <SelectItem value="Print">{isArabic ? 'مطبوعات' : 'Print'}</SelectItem>
+                                                    <SelectItem value="Other">{dict.crm.leadSource.other}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'الميزانية' : 'Budget'}</Label>
-                                            <Input
-                                                type="number"
-                                                step="0.001"
-                                                value={newCampaign.budget}
-                                                onChange={(e) => setNewCampaign({ ...newCampaign, budget: Number(e.target.value) })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>{isArabic ? 'تاريخ البدء' : 'Start Date'}</Label>
-                                            <Input
-                                                type="date"
-                                                value={newCampaign.start_date}
-                                                onChange={(e) => setNewCampaign({ ...newCampaign, start_date: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>{isArabic ? 'تاريخ الانتهاء' : 'End Date'}</Label>
-                                            <Input
-                                                type="date"
-                                                value={newCampaign.end_date}
-                                                onChange={(e) => setNewCampaign({ ...newCampaign, end_date: e.target.value })}
-                                            />
+                                            <Label>{isArabic ? 'الميزانية' : 'Budget'} ({currency})</Label>
+                                            <Input type="number" value={newCampaign.budget} onChange={e => setNewCampaign({ ...newCampaign, budget: Number(e.target.value) })} />
                                         </div>
                                     </div>
                                     <DialogFooter>
                                         <Button variant="outline" onClick={() => setIsCampaignDialogOpen(false)}>{dict.common.cancel}</Button>
-                                        <Button onClick={handleCreateCampaign}>{isArabic ? 'إنشاء الحملة' : 'Create Campaign'}</Button>
+                                        <Button onClick={handleCreateCampaign} className="bg-slate-900 text-white font-bold">{dict.crm.newCamp}</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -810,13 +773,13 @@ export default function CRMPage() {
                                                     <Badge variant="outline">{lead.source || '-'}</Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge className={`${leadStatusConfig[lead.status]?.color || ''} border-none`}>
-                                                        {leadStatusConfig[lead.status]?.label || lead.status}
+                                                    <Badge className={`${getLeadStatusConfig(lead.status)?.color || ''} border-none`}>
+                                                        {getLeadStatusConfig(lead.status)?.label || lead.status}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge className={`${priorityConfig[lead.priority]?.color || ''} border-none`}>
-                                                        {priorityConfig[lead.priority]?.label || lead.priority}
+                                                    <Badge className={`${getPriorityConfig(lead.priority)?.color || ''} border-none`}>
+                                                        {getPriorityConfig(lead.priority)?.label || lead.priority}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono font-bold">
@@ -905,8 +868,8 @@ export default function CRMPage() {
                                                 </TableCell>
                                                 <TableCell>{opportunity.customers?.name || '-'}</TableCell>
                                                 <TableCell>
-                                                    <Badge className={`${opportunityStageConfig[opportunity.stage]?.color || ''} border-none`}>
-                                                        {opportunityStageConfig[opportunity.stage]?.label || opportunity.stage}
+                                                    <Badge className={`${getOpportunityStageConfig(opportunity.stage)?.color || ''} border-none`}>
+                                                        {getOpportunityStageConfig(opportunity.stage)?.label || opportunity.stage}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -946,10 +909,10 @@ export default function CRMPage() {
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedWon')} className="text-emerald-600 font-bold">
-                                                                <TrendingUp className="h-4 w-4 mr-2" /> Closed Won
+                                                                <TrendingUp className="h-4 w-4 mr-2" /> {dict.crm.closedWon}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedLost')} className="text-rose-600">
-                                                                Closed Lost
+                                                                {dict.crm.closedLost}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteOpportunity(opportunity.id)}>

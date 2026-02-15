@@ -108,6 +108,7 @@ export const dictionaries = {
             error: "Error",
             warning: "Warning",
             info: "Info",
+            new: "New",
         },
         // Operations (used across modules)
         operations: {
@@ -162,14 +163,30 @@ export const dictionaries = {
             pipelineValue: "Pipeline Value",
             wonRevenue: "Won Revenue",
             newLead: "New Lead",
-            newOpportunity: "New Opportunity",
-            newCampaign: "New Campaign",
+            newOpp: "New Opportunity",
+            newCamp: "New Campaign",
             prospecting: "Prospecting",
             qualification: "Qualification",
             proposal: "Proposal",
             negotiation: "Negotiation",
             closedWon: "Closed Won",
             closedLost: "Closed Lost",
+            industry: "Industry",
+            source: "Source",
+            estimatedValue: "Estimated Value",
+            expectedClose: "Expected Close Date",
+            contactName: "Contact Name",
+            companyName: "Company Name",
+            convertLead: "Convert to Customer",
+            leadSource: {
+                website: "Website",
+                referral: "Referral",
+                social: "Social Media",
+                event: "Event",
+                advertising: "Advertising",
+                coldCall: "Cold Call",
+                other: "Other"
+            }
         },
         // Inventory Module
         inventory: {
@@ -665,6 +682,7 @@ export const dictionaries = {
             error: "خطأ",
             warning: "تحذير",
             info: "معلومات",
+            new: "جديد",
         },
         // Operations (used across modules)
         operations: {
@@ -719,14 +737,30 @@ export const dictionaries = {
             pipelineValue: "إجمالي قيمة المسار البيعي",
             wonRevenue: "الإيرادات المحققة",
             newLead: "عميل محتمل جديد",
-            newOpportunity: "فرصة بيعية جديدة",
-            newCampaign: "حملة تسويقية جديدة",
-            prospecting: "البحث والتنقيب",
-            qualification: "تأهيل الفرص",
-            proposal: "تقديم العروض",
-            negotiation: "التفاوض",
+            newOpp: "فرصة جديدة",
+            newCamp: "حملة جديدة",
+            prospecting: "بحث وتنقيب",
+            qualification: "تأهيل",
+            proposal: "عرض سعر",
+            negotiation: "تفاوض",
             closedWon: "صفقة ناجحة",
             closedLost: "صفقة خاسرة",
+            industry: "الصناعة",
+            source: "المصدر",
+            estimatedValue: "القيمة التقديرية",
+            expectedClose: "تاريخ الإغلاق المتوقع",
+            contactName: "اسم جهة الاتصال",
+            companyName: "اسم الشركة",
+            convertLead: "تحويل إلى عميل",
+            leadSource: {
+                website: "الموقع الإلكتروني",
+                referral: "توصية",
+                social: "وسائل التواصل",
+                event: "فعالية",
+                advertising: "إعلان",
+                coldCall: "اتصال بارد",
+                other: "آخر"
+            }
         },
         // Inventory Module
         inventory: {
