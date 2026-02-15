@@ -17,7 +17,8 @@ import {
     CheckCircle2,
     Activity,
     Search,
-    Loader2
+    Loader2,
+    MapPin
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -64,6 +65,9 @@ interface Project {
     start_date: string
     deadline: string
     customer_id?: string
+    latitude?: number
+    longitude?: number
+    radius_meters?: number
 }
 
 interface ProjectsClientProps {
@@ -95,7 +99,10 @@ export function ProjectsClient({
         status: 'Planning' as const,
         budget: 0,
         deadline: '',
-        customer_id: ''
+        customer_id: '',
+        latitude: null as number | null,
+        longitude: null as number | null,
+        radius_meters: 200
     })
 
     const supabase = createClient()
@@ -131,10 +138,28 @@ export function ProjectsClient({
         if (error) alert(error.message)
         else {
             setIsCreateOpen(false)
-            setNewProject({ title: '', description: '', status: 'Planning', budget: 0, deadline: '', customer_id: '' })
+            setNewProject({ title: '', description: '', status: 'Planning', budget: 0, deadline: '', customer_id: '', latitude: null, longitude: null, radius_meters: 200 })
             refreshData()
             router.refresh()
         }
+    }
+
+    const setMyLocation = (isEdit: boolean) => {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            if (isEdit && editingProject) {
+                setEditingProject({
+                    ...editingProject,
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                })
+            } else {
+                setNewProject({
+                    ...newProject,
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude
+                })
+            }
+        })
     }
 
     const handleEditProject = async () => {
@@ -147,7 +172,10 @@ export function ProjectsClient({
                 status: editingProject.status,
                 budget: editingProject.budget,
                 deadline: editingProject.deadline,
-                customer_id: editingProject.customer_id === '' ? null : editingProject.customer_id
+                customer_id: editingProject.customer_id === '' ? null : editingProject.customer_id,
+                latitude: editingProject.latitude,
+                longitude: editingProject.longitude,
+                radius_meters: editingProject.radius_meters
             })
             .eq('id', editingProject.id)
 
@@ -244,6 +272,26 @@ export function ProjectsClient({
                                 <div className="space-y-2">
                                     <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Completion Deadline</Label>
                                     <Input type="date" value={newProject.deadline} onChange={e => setNewProject({ ...newProject, deadline: e.target.value })} className="h-11" />
+                                </div>
+                                <div className="space-y-4 col-span-2 pt-4 border-t border-slate-100">
+                                    <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Geofence Restrictions (Attendance Security)</h4>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-[9px] font-bold uppercase text-slate-500">Latitude</Label>
+                                            <Input type="number" step="any" value={newProject.latitude || ''} onChange={e => setNewProject({ ...newProject, latitude: Number(e.target.value) })} className="h-10 text-xs" placeholder="29.3759" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[9px] font-bold uppercase text-slate-500">Longitude</Label>
+                                            <Input type="number" step="any" value={newProject.longitude || ''} onChange={e => setNewProject({ ...newProject, longitude: Number(e.target.value) })} className="h-10 text-xs" placeholder="47.9774" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-[9px] font-bold uppercase text-slate-500">Radius (m)</Label>
+                                            <Input type="number" value={newProject.radius_meters} onChange={e => setNewProject({ ...newProject, radius_meters: Number(e.target.value) })} className="h-10 text-xs" />
+                                        </div>
+                                    </div>
+                                    <Button type="button" variant="outline" size="sm" className="w-full text-[10px] uppercase font-bold text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => setMyLocation(false)}>
+                                        <MapPin className="h-3 w-3 mr-2" /> Use My Current Location as Site Center
+                                    </Button>
                                 </div>
                                 <div className="space-y-2 col-span-2">
                                     <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Scope Description</Label>
@@ -422,6 +470,26 @@ export function ProjectsClient({
                             <div className="space-y-2">
                                 <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Completion Deadline</Label>
                                 <Input type="date" value={editingProject.deadline} onChange={e => setEditingProject({ ...editingProject, deadline: e.target.value })} className="h-11" />
+                            </div>
+                            <div className="space-y-4 col-span-2 pt-4 border-t border-slate-100">
+                                <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Geofence Restrictions (Attendance Security)</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-bold uppercase text-slate-500">Latitude</Label>
+                                        <Input type="number" step="any" value={editingProject.latitude || ''} onChange={e => setEditingProject({ ...editingProject, latitude: Number(e.target.value) })} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-bold uppercase text-slate-500">Longitude</Label>
+                                        <Input type="number" step="any" value={editingProject.longitude || ''} onChange={e => setEditingProject({ ...editingProject, longitude: Number(e.target.value) })} className="h-10 text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-bold uppercase text-slate-500">Radius (m)</Label>
+                                        <Input type="number" value={editingProject.radius_meters || 200} onChange={e => setEditingProject({ ...editingProject, radius_meters: Number(e.target.value) })} className="h-10 text-xs" />
+                                    </div>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" className="w-full text-[10px] uppercase font-bold text-indigo-600 border-indigo-200 bg-indigo-50/50" onClick={() => setMyLocation(true)}>
+                                    <MapPin className="h-3 w-3 mr-2" /> Calibrate to My Current Location
+                                </Button>
                             </div>
                             <div className="space-y-2 col-span-2">
                                 <Label className="font-bold text-slate-700 uppercase text-[10px] tracking-widest">Scope Description</Label>

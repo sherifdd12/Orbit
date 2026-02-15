@@ -369,6 +369,16 @@ export const dictionaries = {
             rejected: "Rejected",
             newEmployee: "New Employee",
             requestLeave: "Request Leave",
+            geofenceViolation: "Geofence Violation",
+            biometricIdentity: "Biometric Identity",
+            secureClockIn: "Secure Clock In",
+            livenessVerified: "Liveness Verified",
+            deviceBound: "Device Bound",
+            siteRadius: "Site Radius",
+            verifyIdentity: "Verify Identity",
+            syncLogs: "Sync Logs",
+            performanceInsights: "Performance Insights",
+            violationAlerts: "Violation Alerts",
         },
         // Admin Module
         admin: {
@@ -966,6 +976,16 @@ export const dictionaries = {
             rejected: "مرفوض",
             newEmployee: "موظف جديد",
             requestLeave: "طلب إجازة",
+            geofenceViolation: "مخالفة النطاق الجغرافي",
+            biometricIdentity: "الهوية البيومترية",
+            secureClockIn: "تحضير آمن",
+            livenessVerified: "تم التحقق من الحيوية",
+            deviceBound: "جهاز مرتبط",
+            siteRadius: "نطاق الموقع",
+            verifyIdentity: "التحقق من الهوية",
+            syncLogs: "مزامنة السجلات",
+            performanceInsights: "رؤى الأداء",
+            violationAlerts: "تنبيهات المخالفات",
         },
         // Admin Module
         admin: {
