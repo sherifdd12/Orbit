@@ -740,7 +740,7 @@ export default function InvoicesPage() {
 
             {/* Print Dialog */}
             <Dialog open={isPrintOpen} onOpenChange={setIsPrintOpen}>
-                <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto print:max-h-none print:overflow-visible print:p-0 print:border-none print:shadow-none">
                     <DialogHeader className="no-print">
                         <DialogTitle>{isArabic ? 'معاينة الطباعة' : 'Print Preview'}</DialogTitle>
                     </DialogHeader>

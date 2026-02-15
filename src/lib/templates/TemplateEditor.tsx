@@ -655,7 +655,7 @@ export function TemplateEditor({
 
                 {/* Preview Panel */}
                 {showPreview && (
-                    <Card className="overflow-auto max-h-[800px]">
+                    <Card className="overflow-auto max-h-[800px] print:max-h-none print:overflow-visible print:p-0 print:border-none print:shadow-none">
                         <CardHeader className="no-print">
                             <CardTitle className="text-sm flex items-center gap-2">
                                 <Eye className="h-4 w-4" />

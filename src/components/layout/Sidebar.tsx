@@ -186,7 +186,7 @@ export function AppSidebar() {
     )
 
     return (
-        <Sidebar variant="inset" side={locale === "ar" ? "right" : "left"} className="border-r">
+        <Sidebar variant="inset" side={locale === "ar" ? "right" : "left"} className="border-r no-print">
             <SidebarHeader className="flex flex-row items-center gap-2 px-4 py-4 border-b">
                 <div className="flex aspect-square size-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg">
                     <LayoutDashboard className="size-5" />
@@ -334,7 +334,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
-                <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+                <header className="flex h-16 shrink-0 items-center justify-between gap-2 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 no-print">
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ms-1" />
                         <div className="h-4 w-px bg-muted mx-2" />

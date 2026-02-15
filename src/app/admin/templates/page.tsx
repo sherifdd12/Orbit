@@ -151,7 +151,7 @@ export default function DocumentTemplatesPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 no-print">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{dict.templates.title}</h2>
                     <p className="text-muted-foreground text-sm">
@@ -306,7 +306,7 @@ export default function DocumentTemplatesPage() {
                     <Button
                         variant="ghost"
                         onClick={() => setSelectedType(null)}
-                        className="gap-2 mb-4"
+                        className="gap-2 mb-4 no-print"
                     >
                         ← {isArabic ? 'العودة إلى القوالب' : 'Back to Templates'}
                     </Button>
