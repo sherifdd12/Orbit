@@ -131,65 +131,74 @@
     margin: 0mm;
   }
 
-  /* Brute-force hide everything regardless of position */
-  body>*:not(main),
-  header,
-  aside,
-  [role="dialog"]>*:not(.print-document):not(.print-area),
-  [role="tablist"],
-  button,
-  .no-print {
-    display: none !important;
-  }
-
-  /* Force all parents to be transparent and non-positioned */
+  /* 1. Global Reset: Neutralize all layout shifting factors */
   html,
   body,
   #__next,
-  body>[data-radix-portal],
   main,
   div {
-    background: transparent !important;
-    position: static !important;
+    background: white !important;
     margin: 0 !important;
     padding: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    min-height: 0 !important;
     overflow: visible !important;
+    height: auto !important;
+    width: auto !important;
     transform: none !important;
     box-shadow: none !important;
     border: none !important;
-    transition: none !important;
     mask: none !important;
     filter: none !important;
     backdrop-filter: none !important;
+    transition: none !important;
   }
 
-  /* Anchor the actual document to the very top left of the physical page */
+  /* 2. Isolation: Hide the UI but show the document */
+  body {
+    visibility: hidden !important;
+  }
+
+  /* 3. Target the document elements and their contents */
   .print-document,
   .print-area,
-  .print-force-top {
-    display: block !important;
+  [role="tabpanel"]:not([data-state="inactive"]) {
     visibility: visible !important;
+    display: block !important;
     position: fixed !important;
-    /* Fixed is more stable across browser print engines */
     left: 0 !important;
     top: 0 !important;
     width: 210mm !important;
-    /* Force A4 width to prevent layout drift */
+    /* Force A4 width */
     min-height: 297mm !important;
     background: white !important;
     padding: 10mm !important;
     z-index: 2147483647 !important;
-    /* Max z-index */
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
   }
 
-  /* Ensure text is black and high contrast */
+  /* Ensure all nested elements are visible */
   .print-document *,
-  .print-area * {
+  .print-area *,
+  [role="tabpanel"]:not([data-state="inactive"]) * {
+    visibility: visible !important;
+  }
+
+  /* 4. Heavy-duty Cleanup: Remove confirmed non-document elements */
+  .no-print,
+  aside,
+  header,
+  button,
+  nav,
+  [role="tablist"],
+  .SidebarTrigger {
+    display: none !important;
+  }
+
+  /* Remove dialog overlays that might gray out the page */
+  [role="dialog"],
+  [data-state="open"],
+  [data-radix-portal] {
+    background: transparent !important;
     visibility: visible !important;
   }
 }
