@@ -446,7 +446,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-emerald-50 to-green-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-emerald-600">
-                            {isArabic ? 'الفرص الرابحة' : 'Won Leads'}
+                            {dict.crm.wonLeads}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-emerald-700">{leadStats.won}</CardTitle>
                     </CardHeader>
@@ -454,7 +454,7 @@ export default function CRMPage() {
                 <Card className="border-none shadow-md bg-gradient-to-br from-purple-50 to-violet-100">
                     <CardHeader className="pb-2">
                         <CardDescription className="text-xs font-bold uppercase text-purple-600">
-                            {isArabic ? 'الفرص المفتوحة' : 'Open Opportunities'}
+                            {dict.crm.openOpportunities}
                         </CardDescription>
                         <CardTitle className="text-2xl font-bold text-purple-700">{opportunityStats.open}</CardTitle>
                     </CardHeader>
@@ -517,28 +517,28 @@ export default function CRMPage() {
                                     </DialogHeader>
                                     <div className="grid grid-cols-2 gap-4 py-4">
                                         <div className="space-y-2 col-span-2">
-                                            <Label>{isArabic ? 'اسم جهة الاتصال' : 'Contact Name'} *</Label>
+                                            <Label>{dict.crm.contactName} *</Label>
                                             <Input
                                                 value={newLead.contact_name}
                                                 onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'اسم الشركة' : 'Company Name'}</Label>
+                                            <Label>{dict.crm.companyName}</Label>
                                             <Input
                                                 value={newLead.company_name}
                                                 onChange={(e) => setNewLead({ ...newLead, company_name: e.target.value })}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'الصناعة' : 'Industry'}</Label>
+                                            <Label>{dict.crm.industry}</Label>
                                             <Input
                                                 value={newLead.industry}
                                                 onChange={(e) => setNewLead({ ...newLead, industry: e.target.value })}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'البريد الإلكتروني' : 'Email'}</Label>
+                                            <Label>{dict.common.email}</Label>
                                             <Input
                                                 type="email"
                                                 value={newLead.email}
@@ -546,14 +546,14 @@ export default function CRMPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'الهاتف' : 'Phone'}</Label>
+                                            <Label>{dict.common.phone}</Label>
                                             <Input
                                                 value={newLead.phone}
                                                 onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'المصدر' : 'Source'}</Label>
+                                            <Label>{dict.crm.source}</Label>
                                             <Select
                                                 value={newLead.source}
                                                 onValueChange={(v) => setNewLead({ ...newLead, source: v })}
@@ -563,7 +563,7 @@ export default function CRMPage() {
                                                     <SelectItem value="Website">{dict.crm.leadSource.website}</SelectItem>
                                                     <SelectItem value="Referral">{dict.crm.leadSource.referral}</SelectItem>
                                                     <SelectItem value="SocialMedia">{dict.crm.leadSource.social}</SelectItem>
-                                                    <SelectItem value="Exhibition">{isArabic ? 'معرض' : 'Exhibition'}</SelectItem>
+                                                    <SelectItem value="Exhibition">{dict.crm.exhibition}</SelectItem>
                                                     <SelectItem value="Advertising">{dict.crm.leadSource.advertising}</SelectItem>
                                                     <SelectItem value="ColdCall">{dict.crm.leadSource.coldCall}</SelectItem>
                                                     <SelectItem value="Other">{dict.crm.leadSource.other}</SelectItem>
@@ -571,7 +571,7 @@ export default function CRMPage() {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'الأولوية' : 'Priority'}</Label>
+                                            <Label>{dict.common.status}</Label>
                                             <Select
                                                 value={newLead.priority}
                                                 onValueChange={(v) => setNewLead({ ...newLead, priority: v })}
@@ -586,7 +586,7 @@ export default function CRMPage() {
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'القيمة المتوقعة' : 'Estimated Value'}</Label>
+                                            <Label>{dict.crm.estimatedValue}</Label>
                                             <Input
                                                 type="number"
                                                 step="0.001"
@@ -595,7 +595,7 @@ export default function CRMPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{isArabic ? 'تاريخ الإغلاق المتوقع' : 'Expected Close Date'}</Label>
+                                            <Label>{dict.crm.expectedClose}</Label>
                                             <Input
                                                 type="date"
                                                 value={newLead.expected_close_date}

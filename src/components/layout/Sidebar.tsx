@@ -307,9 +307,11 @@ export function AppSidebar() {
 }
 
 import { NotificationCenter } from "@/components/notifications/NotificationCenter"
+import { useSettings } from "@/lib/context/SettingsContext"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { locale, setLocale, dict } = useLanguage()
+    const { companyName } = useSettings()
     const [user, setUser] = React.useState<any>(null)
     const supabase = createClient()
 
@@ -336,7 +338,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <div className="flex items-center gap-2">
                         <SidebarTrigger className="-ms-1" />
                         <div className="h-4 w-px bg-muted mx-2" />
-                        <h1 className="text-sm font-medium hidden md:block">Workspace / Orbit Foundation</h1>
+                        <h1 className="text-sm font-medium hidden md:block">
+                            {dict.common.workspace} / {companyName}
+                        </h1>
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
                         {/* Language Switcher */}

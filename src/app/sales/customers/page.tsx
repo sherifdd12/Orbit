@@ -173,7 +173,7 @@ export default function CustomersPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{dict.sales.customers}</h2>
-                    <p className="text-muted-foreground text-sm">Manage your client list, credit limits, and contact information.</p>
+                    <p className="text-muted-foreground text-sm">{dict.sales.manageCustomersDescription}</p>
                 </div>
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
@@ -183,42 +183,42 @@ export default function CustomersPage() {
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle>Add New Customer</DialogTitle>
+                            <DialogTitle>{dict.sales.addNewCustomer}</DialogTitle>
                         </DialogHeader>
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <div className="space-y-2 col-span-2">
-                                <Label>Full Name / Contact Person</Label>
+                                <Label>{dict.sales.fullName}</Label>
                                 <Input value={newCust.name} onChange={e => setNewCust({ ...newCust, name: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Company Name</Label>
+                                <Label>{dict.crm.companyName}</Label>
                                 <Input value={newCust.company} onChange={e => setNewCust({ ...newCust, company: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Customer Type</Label>
+                                <Label>{dict.sales.customerType}</Label>
                                 <select className="w-full border rounded-md p-2 h-10" value={newCust.customer_type} onChange={e => setNewCust({ ...newCust, customer_type: e.target.value as any })}>
-                                    <option value="Company">Company / Business</option>
-                                    <option value="Individual">Individual</option>
+                                    <option value="Company">{dict.sales.companyBusiness}</option>
+                                    <option value="Individual">{dict.sales.individual}</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Email</Label>
+                                <Label>{dict.common.email}</Label>
                                 <Input type="email" value={newCust.email} onChange={e => setNewCust({ ...newCust, email: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Phone</Label>
+                                <Label>{dict.common.phone}</Label>
                                 <Input value={newCust.phone} onChange={e => setNewCust({ ...newCust, phone: e.target.value })} />
                             </div>
                             <div className="space-y-2 col-span-2">
-                                <Label>Address</Label>
+                                <Label>{dict.common.address}</Label>
                                 <Input value={newCust.address} onChange={e => setNewCust({ ...newCust, address: e.target.value })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Credit Limit ({currency})</Label>
+                                <Label>{dict.sales.creditLimit} ({currency})</Label>
                                 <Input type="number" value={newCust.credit_limit} onChange={e => setNewCust({ ...newCust, credit_limit: parseFloat(e.target.value) })} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Payment Terms (Days)</Label>
+                                <Label>{dict.sales.paymentTermsDays}</Label>
                                 <Input type="number" value={newCust.payment_terms} onChange={e => setNewCust({ ...newCust, payment_terms: parseInt(e.target.value) })} />
                             </div>
                         </div>
@@ -233,19 +233,19 @@ export default function CustomersPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-slate-500">Total Customers</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase text-slate-500">{dict.sales.totalCustomers}</CardDescription>
                         <CardTitle className="text-2xl font-bold">{customers.length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">Active Accounts</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase text-emerald-600">{dict.sales.activeAccounts}</CardDescription>
                         <CardTitle className="text-2xl font-bold text-emerald-700">{customers.filter(c => Math.abs(c.balance) > 0).length}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card className="border-none shadow-md bg-white">
                     <CardHeader className="pb-2">
-                        <CardDescription className="text-xs font-bold uppercase text-rose-600">Total Receivables</CardDescription>
+                        <CardDescription className="text-xs font-bold uppercase text-rose-600">{dict.sales.totalReceivables}</CardDescription>
                         <CardTitle className="text-2xl font-bold text-rose-700">{customers.reduce((sum, c) => sum + (c.balance || 0), 0).toLocaleString()} {currency}</CardTitle>
                     </CardHeader>
                 </Card>

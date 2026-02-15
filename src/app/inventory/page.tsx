@@ -358,7 +358,7 @@ export default function InventoryPage() {
                                     <SelectValue placeholder="All Categories" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">{isArabic ? 'جميع الفئات' : 'All Categories'}</SelectItem>
+                                    <SelectItem value="All">{dict.common.all}</SelectItem>
                                     {categories.map(c => (
                                         <SelectItem key={c} value={c}>{c}</SelectItem>
                                     ))}
@@ -375,9 +375,9 @@ export default function InventoryPage() {
                                     <TableHead className="pl-6 w-12"></TableHead>
                                     <TableHead>{dict.inventory.itemName}</TableHead>
                                     <TableHead>{dict.inventory.category}</TableHead>
-                                    <TableHead className="text-right">{isArabic ? 'المتوفر' : 'On Hand'}</TableHead>
+                                    <TableHead className="text-right">{dict.inventory.onHand}</TableHead>
                                     <TableHead className="text-right">{dict.inventory.avgCost}</TableHead>
-                                    <TableHead className="text-right">{isArabic ? 'القيمة الإجمالية' : 'Total Value'}</TableHead>
+                                    <TableHead className="text-right">{dict.inventory.totalValue}</TableHead>
                                     <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -403,7 +403,7 @@ export default function InventoryPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="secondary" className="bg-slate-100 text-slate-600 border-none font-medium h-5">
-                                                {item.category || (isArabic ? 'عام' : 'General')}
+                                                {item.category || dict.inventory.general}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -413,7 +413,7 @@ export default function InventoryPage() {
                                                 </span>
                                                 {item.stock_quantity < 10 && (
                                                     <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-0.5">
-                                                        <TrendingDown className="h-2 w-2" /> {isArabic ? 'إعادة طلب' : 'REORDER'}
+                                                        <TrendingDown className="h-2 w-2" /> {dict.inventory.reorder}
                                                     </span>
                                                 )}
                                             </div>
@@ -430,22 +430,22 @@ export default function InventoryPage() {
                                                     <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-48">
-                                                    <DropdownMenuLabel>Item Operations</DropdownMenuLabel>
+                                                    <DropdownMenuLabel>{dict.inventory.itemOperations}</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => {
                                                         setSelectedItemForTransactions(item)
                                                         fetchItemAuditLogs(item.id)
                                                         setIsTransactionsOpen(true)
                                                     }} className="gap-2">
-                                                        <Eye className="h-4 w-4" /> View Transactions
+                                                        <Eye className="h-4 w-4" /> {dict.inventory.viewTransactions}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => {
                                                         setEditingItem(item)
                                                         setIsEditOpen(true)
-                                                    }} className="gap-2"><Edit className="h-4 w-4" /> Edit Details</DropdownMenuItem>
+                                                    }} className="gap-2"><Edit className="h-4 w-4" /> {dict.inventory.editDetails}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => {
                                                         setSelectedItemForAdjustment(item)
                                                         setIsAdjustmentOpen(true)
-                                                    }} className="gap-2 text-blue-600 font-bold"><Box className="h-4 w-4" /> Stock Adjustment</DropdownMenuItem>
+                                                    }} className="gap-2 text-blue-600 font-bold"><Box className="h-4 w-4" /> {dict.inventory.stockAdjustment}</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="gap-2 text-rose-600" onClick={() => handleDelete(item.id)}>
                                                         <Trash2 className="h-4 w-4" /> Delete Item

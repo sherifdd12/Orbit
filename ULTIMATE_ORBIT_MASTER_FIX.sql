@@ -39,6 +39,12 @@ BEGIN
     EXCEPTION WHEN OTHERS THEN NULL;
     END;
 
+    -- Fix action check constraint (The cause of "violates check constraint audit_logs_action_check")
+    BEGIN
+        ALTER TABLE public.audit_logs DROP CONSTRAINT IF EXISTS audit_logs_action_check;
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END;
+
     -- Safety: Ensure other common columns are nullable if they exist
     BEGIN
         ALTER TABLE public.audit_logs ALTER COLUMN ip_address DROP NOT NULL;
