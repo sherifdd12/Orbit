@@ -172,60 +172,6 @@ export function PrintableDocument({ template, data, companyBranding }: PrintDocu
                 overflow: 'hidden'
             }}
         >
-            <style jsx global>{`
-                @media print {
-                    @page {
-                        size: ${template.paperSize} ${template.orientation};
-                        margin: 0;
-                    }
-                    
-                    /* Reset app shell for print */
-                    .SidebarProvider, 
-                    [data-sidebar-provider],
-                    .SidebarInset,
-                    main {
-                        display: block !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: white !important;
-                        overflow: visible !important;
-                        min-height: 0 !important;
-                        height: auto !important;
-                    }
-
-                    /* Hide UI elements */
-                    .no-print, 
-                    header, 
-                    .SidebarTrigger,
-                    aside {
-                        display: none !important;
-                    }
-
-                    /* Document Styling */
-                    .print-document {
-                        position: absolute !important;
-                        left: 0 !important;
-                        top: 0 !important;
-                        margin: 0 !important;
-                        padding: ${template.margins.top}mm ${template.margins.right}mm ${template.margins.bottom}mm ${template.margins.left}mm !important;
-                        width: ${template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '297mm' : '210mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '11in' : '8.5in') : (template.orientation === 'landscape' ? '210mm' : '148mm')} !important;
-                        min-height: ${template.paperSize === 'A4' ? (template.orientation === 'landscape' ? '210mm' : '297mm') : template.paperSize === 'Letter' ? (template.orientation === 'landscape' ? '8.5in' : '11in') : (template.orientation === 'landscape' ? '148mm' : '210mm')} !important;
-                        background: white !important;
-                        box-shadow: none !important;
-                        border: none !important;
-                        z-index: 100 !important;
-                    }
-                    
-                    /* Global resets */
-                    html, body {
-                        background: white !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        overflow: visible !important;
-                        height: auto !important;
-                    }
-                }
-            `}</style>
             {/* Watermark */}
             {template.showWatermark && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
