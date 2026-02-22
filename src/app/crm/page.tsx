@@ -232,10 +232,14 @@ export default function CRMPage() {
     const fetchData = React.useCallback(async () => {
         setLoading(true)
         const [leadsRes, opportunitiesRes, campaignsRes] = await Promise.all([
-            supabase.from('leads').select('*, profiles(full_name)').order('created_at', { ascending: false }),
-            supabase.from('opportunities').select('*, customers(name), profiles(full_name)').order('created_at', { ascending: false }),
+            supabase.from('leads').select('*').order('created_at', { ascending: false }),
+            supabase.from('opportunities').select('*, customers(name)').order('created_at', { ascending: false }),
             supabase.from('campaigns').select('*').order('created_at', { ascending: false })
         ])
+
+        if (leadsRes.error) console.error("Leads fetch error:", leadsRes.error)
+        if (opportunitiesRes.error) console.error("Opportunities fetch error:", opportunitiesRes.error)
+        if (campaignsRes.error) console.error("Campaigns fetch error:", campaignsRes.error)
 
         if (!leadsRes.error) setLeads(leadsRes.data || [])
         if (!opportunitiesRes.error) setOpportunities(opportunitiesRes.data || [])
@@ -251,11 +255,15 @@ export default function CRMPage() {
         if (!newLead.contact_name) return alert(isArabic ? 'اسم جهة الاتصال مطلوب' : 'Contact name is required')
 
         const leadNumber = generateNumber('LEAD')
-        const { error } = await supabase.from('leads').insert([{
-            lead_number: leadNumber,
+        const payload: any = {
             ...newLead,
+            lead_number: leadNumber,
             status: 'New'
-        }])
+        }
+        if (!payload.expected_close_date) delete payload.expected_close_date;
+        if (!payload.estimated_value) payload.estimated_value = 0;
+
+        const { error } = await supabase.from('leads').insert([payload])
 
         if (error) {
             console.error(error)
@@ -283,10 +291,14 @@ export default function CRMPage() {
         if (!newOpportunity.name) return alert(isArabic ? 'اسم الفرصة مطلوب' : 'Opportunity name is required')
 
         const opportunityNumber = generateNumber('OPP')
-        const { error } = await supabase.from('opportunities').insert([{
-            opportunity_number: opportunityNumber,
-            ...newOpportunity
-        }])
+        const payload: any = {
+            ...newOpportunity,
+            opportunity_number: opportunityNumber
+        }
+        if (!payload.expected_close_date) delete payload.expected_close_date;
+        if (!payload.amount) payload.amount = 0;
+
+        const { error } = await supabase.from('opportunities').insert([payload])
 
         if (error) {
             console.error(error)
@@ -310,11 +322,17 @@ export default function CRMPage() {
         if (!newCampaign.name) return alert(isArabic ? 'اسم الحملة مطلوب' : 'Campaign name is required')
 
         const campaignCode = generateNumber('CAMP')
-        const { error } = await supabase.from('campaigns').insert([{
-            campaign_code: campaignCode,
+        const payload: any = {
             ...newCampaign,
+            campaign_code: campaignCode,
             status: 'Planning'
-        }])
+        }
+        if (!payload.start_date) delete payload.start_date;
+        if (!payload.end_date) delete payload.end_date;
+        if (!payload.budget) payload.budget = 0;
+        if (!payload.expected_revenue) payload.expected_revenue = 0;
+
+        const { error } = await supabase.from('campaigns').insert([payload])
 
         if (error) {
             console.error(error)

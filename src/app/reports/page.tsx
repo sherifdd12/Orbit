@@ -374,280 +374,288 @@ export default function ReportsPage() {
                     </div>
                 </div>
             ) : (
-                <>
+                <div className="print-area space-y-6">
                     {/* Key Metrics */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-green-100">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase text-emerald-600 mb-1">
-                                            {isArabic ? 'إجمالي الإيرادات' : 'Total Revenue'}
-                                        </p>
-                                        <p className="text-2xl font-bold text-emerald-700">{formatMoney(data.totalRevenue)}</p>
-                                        <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600">
-                                            <ArrowUpRight className="h-3 w-3" />
-                                            +{data.revenueGrowth}%
+                    {(reportType === 'overview' || reportType === 'sales' || reportType === 'purchasing' || reportType === 'inventory') && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-50 to-green-100">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-emerald-600 mb-1">
+                                                {isArabic ? 'إجمالي الإيرادات' : 'Total Revenue'}
+                                            </p>
+                                            <p className="text-2xl font-bold text-emerald-700">{formatMoney(data.totalRevenue)}</p>
+                                            <div className="flex items-center gap-1 mt-1 text-xs text-emerald-600">
+                                                <ArrowUpRight className="h-3 w-3" />
+                                                +{data.revenueGrowth}%
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-emerald-200/50">
+                                            <TrendingUp className="h-6 w-6 text-emerald-600" />
                                         </div>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-emerald-200/50">
-                                        <TrendingUp className="h-6 w-6 text-emerald-600" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card className="border-none shadow-lg bg-gradient-to-br from-rose-50 to-red-100">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase text-rose-600 mb-1">
-                                            {isArabic ? 'إجمالي المصروفات' : 'Total Expenses'}
-                                        </p>
-                                        <p className="text-2xl font-bold text-rose-700">{formatMoney(data.totalExpenses)}</p>
-                                        <div className="flex items-center gap-1 mt-1 text-xs text-rose-600">
-                                            <ArrowDownRight className="h-3 w-3" />
-                                            +{data.expenseGrowth}%
+                            <Card className="border-none shadow-lg bg-gradient-to-br from-rose-50 to-red-100">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-rose-600 mb-1">
+                                                {isArabic ? 'إجمالي المصروفات' : 'Total Expenses'}
+                                            </p>
+                                            <p className="text-2xl font-bold text-rose-700">{formatMoney(data.totalExpenses)}</p>
+                                            <div className="flex items-center gap-1 mt-1 text-xs text-rose-600">
+                                                <ArrowDownRight className="h-3 w-3" />
+                                                +{data.expenseGrowth}%
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-rose-200/50">
+                                            <TrendingDown className="h-6 w-6 text-rose-600" />
                                         </div>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-rose-200/50">
-                                        <TrendingDown className="h-6 w-6 text-rose-600" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-100">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase text-blue-600 mb-1">
-                                            {isArabic ? 'صافي الربح' : 'Net Profit'}
-                                        </p>
-                                        <p className={`text-2xl font-bold ${data.netProfit >= 0 ? 'text-blue-700' : 'text-rose-700'}`}>
-                                            {formatMoney(data.netProfit)}
-                                        </p>
-                                        <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
-                                            <Activity className="h-3 w-3" />
-                                            {data.netProfit >= 0 ? (isArabic ? 'ربح' : 'Profit') : (isArabic ? 'خسارة' : 'Loss')}
+                            <Card className="border-none shadow-lg bg-gradient-to-br from-blue-50 to-indigo-100">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-blue-600 mb-1">
+                                                {isArabic ? 'صافي الربح' : 'Net Profit'}
+                                            </p>
+                                            <p className={`text-2xl font-bold ${data.netProfit >= 0 ? 'text-blue-700' : 'text-rose-700'}`}>
+                                                {formatMoney(data.netProfit)}
+                                            </p>
+                                            <div className="flex items-center gap-1 mt-1 text-xs text-blue-600">
+                                                <Activity className="h-3 w-3" />
+                                                {data.netProfit >= 0 ? (isArabic ? 'ربح' : 'Profit') : (isArabic ? 'خسارة' : 'Loss')}
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-blue-200/50">
+                                            <DollarSign className="h-6 w-6 text-blue-600" />
                                         </div>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-blue-200/50">
-                                        <DollarSign className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card className="border-none shadow-lg bg-gradient-to-br from-amber-50 to-orange-100">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase text-amber-600 mb-1">
-                                            {isArabic ? 'قيمة المخزون' : 'Inventory Value'}
-                                        </p>
-                                        <p className="text-2xl font-bold text-amber-700">{formatMoney(data.inventoryValue)}</p>
-                                        <div className="flex items-center gap-1 mt-1 text-xs text-amber-600">
-                                            <Package className="h-3 w-3" />
-                                            {data.lowStockItems} {isArabic ? 'منخفض' : 'low stock'}
+                            <Card className="border-none shadow-lg bg-gradient-to-br from-amber-50 to-orange-100">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-amber-600 mb-1">
+                                                {isArabic ? 'قيمة المخزون' : 'Inventory Value'}
+                                            </p>
+                                            <p className="text-2xl font-bold text-amber-700">{formatMoney(data.inventoryValue)}</p>
+                                            <div className="flex items-center gap-1 mt-1 text-xs text-amber-600">
+                                                <Package className="h-3 w-3" />
+                                                {data.lowStockItems} {isArabic ? 'منخفض' : 'low stock'}
+                                            </div>
+                                        </div>
+                                        <div className="p-3 rounded-xl bg-amber-200/50">
+                                            <Package className="h-6 w-6 text-amber-600" />
                                         </div>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-amber-200/50">
-                                        <Package className="h-6 w-6 text-amber-600" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     {/* Secondary Metrics */}
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Receipt className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-                                <p className="text-2xl font-bold">{data.totalInvoices}</p>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'إجمالي الفواتير' : 'Total Invoices'}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Badge className="mb-2 bg-emerald-100 text-emerald-700">{data.paidInvoices}</Badge>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'مدفوعة' : 'Paid'}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Badge className="mb-2 bg-amber-100 text-amber-700">{data.pendingInvoices}</Badge>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'معلقة' : 'Pending'}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Badge className="mb-2 bg-rose-100 text-rose-700">{data.overdueInvoices}</Badge>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'متأخرة' : 'Overdue'}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Users className="h-8 w-8 mx-auto text-blue-400 mb-2" />
-                                <p className="text-2xl font-bold">{data.totalCustomers}</p>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'العملاء' : 'Customers'}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-none shadow-sm">
-                            <CardContent className="pt-4 text-center">
-                                <Building2 className="h-8 w-8 mx-auto text-orange-400 mb-2" />
-                                <p className="text-2xl font-bold">{data.totalVendors}</p>
-                                <p className="text-xs text-muted-foreground">{isArabic ? 'الموردون' : 'Vendors'}</p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    {(reportType === 'overview' || reportType === 'sales' || reportType === 'customers') && (
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Receipt className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                                    <p className="text-2xl font-bold">{data.totalInvoices}</p>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'إجمالي الفواتير' : 'Total Invoices'}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Badge className="mb-2 bg-emerald-100 text-emerald-700">{data.paidInvoices}</Badge>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'مدفوعة' : 'Paid'}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Badge className="mb-2 bg-amber-100 text-amber-700">{data.pendingInvoices}</Badge>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'معلقة' : 'Pending'}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Badge className="mb-2 bg-rose-100 text-rose-700">{data.overdueInvoices}</Badge>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'متأخرة' : 'Overdue'}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Users className="h-8 w-8 mx-auto text-blue-400 mb-2" />
+                                    <p className="text-2xl font-bold">{data.totalCustomers}</p>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'العملاء' : 'Customers'}</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="border-none shadow-sm">
+                                <CardContent className="pt-4 text-center">
+                                    <Building2 className="h-8 w-8 mx-auto text-orange-400 mb-2" />
+                                    <p className="text-2xl font-bold">{data.totalVendors}</p>
+                                    <p className="text-xs text-muted-foreground">{isArabic ? 'الموردون' : 'Vendors'}</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     {/* Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Monthly Revenue/Expense Chart (Simple Bar Representation) */}
-                        <Card className="border-none shadow-lg">
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <BarChart3 className="h-5 w-5 text-blue-500" />
-                                    {isArabic ? 'الإيرادات والمصروفات الشهرية' : 'Monthly Revenue vs Expenses'}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {data.monthlyData.map((month, idx) => (
-                                        <div key={idx} className="space-y-2">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium w-12">{month.month}</span>
-                                                <div className="flex-1 mx-4">
-                                                    <div className="flex gap-1">
-                                                        <div
-                                                            className="h-6 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-sm transition-all"
-                                                            style={{
-                                                                width: `${Math.min((month.revenue / (Math.max(...data.monthlyData.map(m => m.revenue)) || 1)) * 100, 100)}%`,
-                                                                minWidth: month.revenue > 0 ? '4px' : '0'
-                                                            }}
-                                                        />
-                                                        <div
-                                                            className="h-6 bg-gradient-to-r from-rose-400 to-rose-500 rounded-sm transition-all"
-                                                            style={{
-                                                                width: `${Math.min((month.expenses / (Math.max(...data.monthlyData.map(m => m.revenue)) || 1)) * 100, 100)}%`,
-                                                                minWidth: month.expenses > 0 ? '4px' : '0'
-                                                            }}
-                                                        />
+                    {(reportType === 'overview' || reportType === 'sales' || reportType === 'customers') && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Monthly Revenue/Expense Chart (Simple Bar Representation) */}
+                            <Card className="border-none shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <BarChart3 className="h-5 w-5 text-blue-500" />
+                                        {isArabic ? 'الإيرادات والمصروفات الشهرية' : 'Monthly Revenue vs Expenses'}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {data.monthlyData.map((month, idx) => (
+                                            <div key={idx} className="space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium w-12">{month.month}</span>
+                                                    <div className="flex-1 mx-4">
+                                                        <div className="flex gap-1">
+                                                            <div
+                                                                className="h-6 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-sm transition-all"
+                                                                style={{
+                                                                    width: `${Math.min((month.revenue / (Math.max(...data.monthlyData.map(m => m.revenue)) || 1)) * 100, 100)}%`,
+                                                                    minWidth: month.revenue > 0 ? '4px' : '0'
+                                                                }}
+                                                            />
+                                                            <div
+                                                                className="h-6 bg-gradient-to-r from-rose-400 to-rose-500 rounded-sm transition-all"
+                                                                style={{
+                                                                    width: `${Math.min((month.expenses / (Math.max(...data.monthlyData.map(m => m.revenue)) || 1)) * 100, 100)}%`,
+                                                                    minWidth: month.expenses > 0 ? '4px' : '0'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right w-32">
+                                                        <span className="text-emerald-600">{formatMoney(month.revenue)}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-right w-32">
-                                                    <span className="text-emerald-600">{formatMoney(month.revenue)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div className="flex items-center gap-4 mt-4 text-xs">
-                                        <div className="flex items-center gap-1">
-                                            <div className="h-3 w-3 rounded-sm bg-gradient-to-r from-emerald-400 to-emerald-500" />
-                                            {isArabic ? 'الإيرادات' : 'Revenue'}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <div className="h-3 w-3 rounded-sm bg-gradient-to-r from-rose-400 to-rose-500" />
-                                            {isArabic ? 'المصروفات' : 'Expenses'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Top Customers */}
-                        <Card className="border-none shadow-lg">
-                            <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <Users className="h-5 w-5 text-indigo-500" />
-                                    {isArabic ? 'أفضل العملاء' : 'Top Customers'}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {data.topCustomers.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        {isArabic ? 'لا توجد بيانات' : 'No data available'}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {data.topCustomers.map((customer, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${idx === 0 ? 'bg-amber-100 text-amber-700' :
-                                                        idx === 1 ? 'bg-slate-200 text-slate-600' :
-                                                            idx === 2 ? 'bg-orange-100 text-orange-600' :
-                                                                'bg-slate-100 text-slate-500'
-                                                        }`}>
-                                                        {idx + 1}
-                                                    </div>
-                                                    <span className="font-medium">{customer.name}</span>
-                                                </div>
-                                                <span className="font-mono font-bold text-emerald-600">{formatMoney(customer.total)}</span>
                                             </div>
                                         ))}
+                                        <div className="flex items-center gap-4 mt-4 text-xs">
+                                            <div className="flex items-center gap-1">
+                                                <div className="h-3 w-3 rounded-sm bg-gradient-to-r from-emerald-400 to-emerald-500" />
+                                                {isArabic ? 'الإيرادات' : 'Revenue'}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="h-3 w-3 rounded-sm bg-gradient-to-r from-rose-400 to-rose-500" />
+                                                {isArabic ? 'المصروفات' : 'Expenses'}
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Top Customers */}
+                            <Card className="border-none shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <Users className="h-5 w-5 text-indigo-500" />
+                                        {isArabic ? 'أفضل العملاء' : 'Top Customers'}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {data.topCustomers.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            {isArabic ? 'لا توجد بيانات' : 'No data available'}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {data.topCustomers.map((customer, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${idx === 0 ? 'bg-amber-100 text-amber-700' :
+                                                            idx === 1 ? 'bg-slate-200 text-slate-600' :
+                                                                idx === 2 ? 'bg-orange-100 text-orange-600' :
+                                                                    'bg-slate-100 text-slate-500'
+                                                            }`}>
+                                                            {idx + 1}
+                                                        </div>
+                                                        <span className="font-medium">{customer.name}</span>
+                                                    </div>
+                                                    <span className="font-mono font-bold text-emerald-600">{formatMoney(customer.total)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     {/* Recent Transactions */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <Activity className="h-5 w-5 text-blue-500" />
-                                {isArabic ? 'آخر المعاملات' : 'Recent Transactions'}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-slate-50">
-                                        <TableHead className="pl-6">{isArabic ? 'التاريخ' : 'Date'}</TableHead>
-                                        <TableHead>{isArabic ? 'النوع' : 'Type'}</TableHead>
-                                        <TableHead>{isArabic ? 'المرجع' : 'Reference'}</TableHead>
-                                        <TableHead>{isArabic ? 'الطرف' : 'Party'}</TableHead>
-                                        <TableHead className="text-right pr-6">{isArabic ? 'المبلغ' : 'Amount'}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {data.recentTransactions.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                                                {isArabic ? 'لا توجد معاملات' : 'No transactions found'}
-                                            </TableCell>
+                    {(reportType === 'overview' || reportType === 'sales' || reportType === 'purchasing') && (
+                        <Card className="border-none shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <Activity className="h-5 w-5 text-blue-500" />
+                                    {isArabic ? 'آخر المعاملات' : 'Recent Transactions'}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-slate-50">
+                                            <TableHead className="pl-6">{isArabic ? 'التاريخ' : 'Date'}</TableHead>
+                                            <TableHead>{isArabic ? 'النوع' : 'Type'}</TableHead>
+                                            <TableHead>{isArabic ? 'المرجع' : 'Reference'}</TableHead>
+                                            <TableHead>{isArabic ? 'الطرف' : 'Party'}</TableHead>
+                                            <TableHead className="text-right pr-6">{isArabic ? 'المبلغ' : 'Amount'}</TableHead>
                                         </TableRow>
-                                    ) : data.recentTransactions.map((tx) => (
-                                        <TableRow key={tx.id} className="hover:bg-slate-50/50">
-                                            <TableCell className="pl-6 text-sm">
-                                                {format(new Date(tx.date), 'MMM dd, yyyy')}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className={
-                                                    tx.type === 'invoice' ? 'bg-emerald-50 text-emerald-700' :
-                                                        tx.type === 'bill' ? 'bg-orange-50 text-orange-700' :
-                                                            'bg-slate-50 text-slate-700'
-                                                }>
-                                                    {tx.type === 'invoice' ? (isArabic ? 'فاتورة' : 'Invoice') :
-                                                        tx.type === 'bill' ? (isArabic ? 'شراء' : 'Purchase') :
-                                                            tx.type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-blue-600">{tx.reference}</TableCell>
-                                            <TableCell>{tx.party}</TableCell>
-                                            <TableCell className={`text-right pr-6 font-mono font-bold ${tx.type === 'invoice' ? 'text-emerald-600' : 'text-orange-600'
-                                                }`}>
-                                                {tx.type === 'invoice' ? '+' : '-'}{formatMoney(tx.amount)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {data.recentTransactions.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                                                    {isArabic ? 'لا توجد معاملات' : 'No transactions found'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : data.recentTransactions.map((tx) => (
+                                            <TableRow key={tx.id} className="hover:bg-slate-50/50">
+                                                <TableCell className="pl-6 text-sm">
+                                                    {format(new Date(tx.date), 'MMM dd, yyyy')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={
+                                                        tx.type === 'invoice' ? 'bg-emerald-50 text-emerald-700' :
+                                                            tx.type === 'bill' ? 'bg-orange-50 text-orange-700' :
+                                                                'bg-slate-50 text-slate-700'
+                                                    }>
+                                                        {tx.type === 'invoice' ? (isArabic ? 'فاتورة' : 'Invoice') :
+                                                            tx.type === 'bill' ? (isArabic ? 'شراء' : 'Purchase') :
+                                                                tx.type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-mono text-blue-600">{tx.reference}</TableCell>
+                                                <TableCell>{tx.party}</TableCell>
+                                                <TableCell className={`text-right pr-6 font-mono font-bold ${tx.type === 'invoice' ? 'text-emerald-600' : 'text-orange-600'
+                                                    }`}>
+                                                    {tx.type === 'invoice' ? '+' : '-'}{formatMoney(tx.amount)}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             )}
 
             {/* Print Styles */}
