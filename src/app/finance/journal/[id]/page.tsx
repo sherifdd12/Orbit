@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
+import { printDocument } from "@/lib/utils/printHelper"
 
 export const runtime = 'edge';
 
@@ -91,7 +92,7 @@ export default function JournalEntryDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => window.print()}>
+                    <Button variant="outline" onClick={() => printDocument()}>
                         <Printer className="h-4 w-4 mr-2" /> {locale === 'ar' ? 'طباعة' : 'Print'}
                     </Button>
                 </div>

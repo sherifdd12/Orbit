@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/table"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
+import { printDocument } from "@/lib/utils/printHelper"
 
 export const runtime = 'edge';
 
@@ -282,7 +283,7 @@ export default function ReportsPage() {
 
     // Export to PDF (placeholder)
     const handleExport = () => {
-        window.print()
+        printDocument()
     }
 
     return (
@@ -300,7 +301,7 @@ export default function ReportsPage() {
                         <Download className="h-4 w-4" />
                         {isArabic ? 'تصدير' : 'Export'}
                     </Button>
-                    <Button variant="outline" onClick={() => window.print()} className="gap-2">
+                    <Button variant="outline" onClick={() => printDocument()} className="gap-2">
                         <Printer className="h-4 w-4" />
                         {isArabic ? 'طباعة' : 'Print'}
                     </Button>

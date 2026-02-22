@@ -63,6 +63,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
 import { PrintableDocument } from "@/lib/templates/PrintableDocument"
 import { defaultPurchaseOrderTemplate } from "@/lib/templates/documentTemplates"
+import { printDocument } from "@/lib/utils/printHelper"
 
 export const runtime = 'edge';
 
@@ -761,7 +762,7 @@ export default function PurchaseOrdersPage() {
                     )}
                     <DialogFooter className="no-print">
                         <Button variant="outline" onClick={() => setIsPrintOpen(false)}>{dict.common.close}</Button>
-                        <Button onClick={() => window.print()} className="gap-2 bg-gradient-to-r from-orange-600 to-red-600">
+                        <Button onClick={() => printDocument()} className="gap-2 bg-gradient-to-r from-orange-600 to-red-600">
                             <Printer className="h-4 w-4" /> {isArabic ? 'طباعة' : 'Print'}
                         </Button>
                     </DialogFooter>

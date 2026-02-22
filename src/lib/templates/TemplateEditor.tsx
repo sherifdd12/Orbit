@@ -12,6 +12,7 @@ import {
     templateTypeLabels
 } from "./documentTemplates"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
+import { printDocument } from "@/lib/utils/printHelper"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -145,7 +146,7 @@ export function TemplateEditor({
     }
 
     const handlePrint = () => {
-        window.print()
+        printDocument()
     }
 
     return (

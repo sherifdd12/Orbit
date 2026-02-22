@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tabs"
 import { useLanguage } from "@/lib/i18n/LanguageContext"
 import { useSettings } from "@/lib/context/SettingsContext"
+import { printDocument } from "@/lib/utils/printHelper"
 
 export const runtime = 'edge';
 
@@ -247,7 +248,7 @@ export default function FinancialReportsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+                    <Button variant="outline" className="gap-2" onClick={() => printDocument()}>
                         <Printer className="h-4 w-4" /> {locale === 'ar' ? 'طباعة' : 'Print'}
                     </Button>
                     <Button variant="outline" className="gap-2" onClick={fetchReportData}>
