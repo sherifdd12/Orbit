@@ -131,78 +131,68 @@
     margin: 0;
   }
 
-  /* 1. Hide all application UI shells and controls */
-  header,
-  aside,
-  nav,
-  button,
-  .no-print,
-  [role="tablist"],
-  [data-sidebar="sidebar"],
-  [data-radix-focus-guard] {
-    display: none !important;
+  /* 1. Hide absolutely everything by default */
+  body * {
+    visibility: hidden;
   }
 
-  /* 2. Hide inactive tabs in reports */
-  [role="tabpanel"][data-state="inactive"] {
-    display: none !important;
+  /* 2. Show the print areas and ALL their children */
+  .print-document,
+  .print-document *,
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
   }
 
-  /* 3. Reset main layout constraints so document uses full width */
-  html,
-  body,
-  #__next,
-  main,
-  [data-sidebar="wrapper"],
-  [data-sidebar="inset"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    background: white !important;
-    display: block !important;
-    overflow: visible !important;
-  }
-
-  /* 4. Reset Dialogs and Portals to act as normal blocks (fixes blank modals) */
-  [role="dialog"] {
+  /* 3. The Magic Bullet: Find ALL ancestors of the print area up to the body,
+     make them visible (required for children to show), and strip ALL layout constraints.
+     This instantly solves the fixed-position Dialog cropping, making it act like a normal page! */
+  body *:has(.print-document),
+  body *:has(.print-area) {
+    visibility: visible !important;
     position: static !important;
-    transform: none !important;
     display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    transform: none !important;
+    overflow: visible !important;
     height: auto !important;
+    max-height: none !important;
+    width: auto !important;
+    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
+    float: none !important;
   }
 
-  /* Hide the dark backdrop of modals */
-  [data-state="open"]~div[data-aria-hidden="true"] {
+  /* 4. Reset body and html */
+  html,
+  body {
+    visibility: visible !important;
+    position: static !important;
+    display: block !important;
+    transform: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-font-smoothing: antialiased;
+    color: black !important;
+  }
+
+  /* 5. Clean up things that should NEVER print even if they are inside a visible ancestor */
+  .no-print,
+  .no-print * {
     display: none !important;
   }
 
-  /* 5. Ensure the document and print area span perfectly */
+  /* Force exact color matching for standard charts/branding */
   .print-document,
   .print-area {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
     print-color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
-    background: white !important;
-  }
-
-  /* Reset font rendering for print */
-  body {
-    -webkit-font-smoothing: antialiased;
-    color: black !important;
   }
 }
