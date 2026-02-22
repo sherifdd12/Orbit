@@ -391,6 +391,45 @@ export default function CRMPage() {
         alert(isArabic ? 'تم تحويل العميل المحتمل بنجاح!' : 'Lead converted to customer successfully!')
     }
 
+    // Drag and Drop Handlers for Kanban Board
+    const [draggingOppId, setDraggingOppId] = React.useState<string | null>(null)
+
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+        setDraggingOppId(id)
+        e.dataTransfer.setData('opp_id', id)
+        // Add a slight transparency effect while dragging
+        setTimeout(() => {
+            const el = document.getElementById(`opp-card-${id}`)
+            if (el) el.style.opacity = '0.5'
+        }, 0)
+    }
+
+    const handleDragEnd = (e: React.DragEvent, id: string) => {
+        setDraggingOppId(null)
+        const el = document.getElementById(`opp-card-${id}`)
+        if (el) el.style.opacity = '1'
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault() // Necessary to allow dropping
+    }
+
+    const handleDrop = async (e: React.DragEvent, newStage: string) => {
+        e.preventDefault()
+        const id = e.dataTransfer.getData('opp_id')
+        if (!id) return
+
+        const opp = opportunities.find(o => o.id === id)
+        if (opp && opp.stage !== newStage) {
+            // Optimistic Update for snappy UI
+            setOpportunities(prev => prev.map(o => o.id === id ? { ...o, stage: newStage } : o))
+            await handleUpdateOpportunityStage(opp, newStage)
+        }
+        setDraggingOppId(null)
+    }
+
+    const STAGES = ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'ClosedWon', 'ClosedLost']
+
     const filteredLeads = leads.filter(l =>
         l.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         l.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -830,104 +869,93 @@ export default function CRMPage() {
                     </Card>
                 </TabsContent>
 
-                {/* Opportunities Tab */}
+                {/* Opportunities Tab - KANBAN BOARD */}
                 <TabsContent value="opportunities">
-                    <Card className="border-none shadow-xl bg-white overflow-hidden">
-                        <CardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-slate-50/20">
-                                            <TableHead className="pl-6">{isArabic ? 'الفرصة' : 'Opportunity'}</TableHead>
-                                            <TableHead>{isArabic ? 'العميل' : 'Customer'}</TableHead>
-                                            <TableHead>{isArabic ? 'المرحلة' : 'Stage'}</TableHead>
-                                            <TableHead>{isArabic ? 'الاحتمالية' : 'Probability'}</TableHead>
-                                            <TableHead className="text-right">{isArabic ? 'المبلغ' : 'Amount'}</TableHead>
-                                            <TableHead>{isArabic ? 'الإغلاق المتوقع' : 'Expected Close'}</TableHead>
-                                            <TableHead className="text-right pr-6">{dict.common.actions}</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {loading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={7} className="text-center py-20">{dict.common.loading}</TableCell>
-                                            </TableRow>
-                                        ) : filteredOpportunities.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={7} className="text-center py-20 text-muted-foreground">
-                                                    {isArabic ? 'لا توجد فرص' : 'No opportunities found'}
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : filteredOpportunities.map(opportunity => (
-                                            <TableRow key={opportunity.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                <TableCell className="pl-6">
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold">{opportunity.name}</span>
-                                                        <span className="text-xs text-muted-foreground font-mono">{opportunity.opportunity_number}</span>
+                    {loading ? (
+                        <Card className="border-none shadow-md">
+                            <CardContent className="py-20 text-center text-muted-foreground">
+                                {dict.common.loading}
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="flex gap-4 overflow-x-auto pb-6 pt-2 px-2 print-area" style={{ minHeight: '600px' }}>
+                            {STAGES.map(stage => {
+                                const stageOpps = filteredOpportunities.filter(o => o.stage === stage)
+                                const stageConfig = getOpportunityStageConfig(stage)
+                                const totalValue = stageOpps.reduce((sum, o) => sum + (o.amount || 0), 0)
+
+                                return (
+                                    <div
+                                        key={stage}
+                                        className="shrink-0 w-80 flex flex-col bg-slate-100/50 rounded-xl border border-slate-200/60 overflow-hidden"
+                                        onDragOver={handleDragOver}
+                                        onDrop={(e) => handleDrop(e, stage)}
+                                    >
+                                        {/* Column Header */}
+                                        <div className={`p-3 border-b border-slate-200/60 flex items-center justify-between bg-white ${stageConfig.color.replace('text-', 'border-t-4 border-')}`}>
+                                            <div>
+                                                <h3 className="font-bold text-sm">{stageConfig.label}</h3>
+                                                <p className="text-xs text-muted-foreground">{formatMoney(totalValue)} • {stageOpps.length} deals</p>
+                                            </div>
+                                            <Badge variant="outline" className="bg-slate-50">{stageConfig.probability}%</Badge>
+                                        </div>
+
+                                        {/* Column Body / Cards Container */}
+                                        <div className="p-3 flex-1 overflow-y-auto space-y-3 min-h-[150px]">
+                                            {stageOpps.map(opp => (
+                                                <div
+                                                    key={opp.id}
+                                                    id={`opp-card-${opp.id}`}
+                                                    draggable
+                                                    onDragStart={(e) => handleDragStart(e, opp.id)}
+                                                    onDragEnd={(e) => handleDragEnd(e, opp.id)}
+                                                    className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-all hover:-translate-y-1 relative group"
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-xs font-mono text-slate-400">{opp.opportunity_number}</span>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                                                                    <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-48">
+                                                                <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteOpportunity(opp.id)}>
+                                                                    <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>{opportunity.customers?.name || '-'}</TableCell>
-                                                <TableCell>
-                                                    <Badge className={`${getOpportunityStageConfig(opportunity.stage)?.color || ''} border-none`}>
-                                                        {getOpportunityStageConfig(opportunity.stage)?.label || opportunity.stage}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div
-                                                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-                                                                style={{ width: `${opportunity.probability}%` }}
-                                                            />
+
+                                                    <h4 className="font-bold text-slate-800 leading-tight mb-1">{opp.name}</h4>
+
+                                                    {opp.customers?.name && (
+                                                        <div className="flex items-center gap-1 text-xs text-slate-500 mb-3">
+                                                            <Building2 className="h-3 w-3" /> {opp.customers.name}
                                                         </div>
-                                                        <span className="text-sm font-bold">{opportunity.probability}%</span>
+                                                    )}
+
+                                                    <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-2">
+                                                        <span className="font-bold text-sm text-indigo-700">{opp.amount ? formatMoney(opp.amount) : '-'}</span>
+                                                        <div className="flex items-center gap-1 text-xs text-slate-400" title="Expected Close">
+                                                            <Calendar className="h-3 w-3" />
+                                                            {opp.expected_close_date ? format(new Date(opp.expected_close_date), 'MMM dd') : '-'}
+                                                        </div>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell className="text-right font-mono font-bold">
-                                                    {opportunity.amount ? formatMoney(opportunity.amount) : '-'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {opportunity.expected_close_date ? format(new Date(opportunity.expected_close_date), 'MMM dd, yyyy') : '-'}
-                                                </TableCell>
-                                                <TableCell className="text-right pr-6">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-48">
-                                                            <DropdownMenuLabel>{isArabic ? 'تحديث المرحلة' : 'Update Stage'}</DropdownMenuLabel>
-                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Qualification')}>
-                                                                Qualification
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Proposal')}>
-                                                                Proposal
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'Negotiation')}>
-                                                                Negotiation
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedWon')} className="text-emerald-600 font-bold">
-                                                                <TrendingUp className="h-4 w-4 mr-2" /> {dict.crm.closedWon}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleUpdateOpportunityStage(opportunity, 'ClosedLost')} className="text-rose-600">
-                                                                {dict.crm.closedLost}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteOpportunity(opportunity.id)}>
-                                                                <Trash2 className="h-4 w-4 mr-2" /> {dict.common.delete}
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                                </div>
+                                            ))}
+
+                                            {stageOpps.length === 0 && (
+                                                <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                                                    {isArabic ? 'اسحب الفرص هنا' : 'Drop opportunities here'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
                 </TabsContent>
 
                 {/* Campaigns Tab */}
