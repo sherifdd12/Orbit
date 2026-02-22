@@ -135,7 +135,7 @@ export function AppSidebar() {
         { title: dict.sidebar.employees, icon: Users, href: "/hr/employees" },
         { title: dict.sidebar.attendance, icon: CheckSquare, href: "/hr/attendance" },
         { title: dict.hr?.leaveRequests || "Leave Requests", icon: FileText, href: "/hr/leave" },
-        { title: dict.hr?.payroll || "Payroll", icon: BadgeDollarSign, href: "/payroll" },
+        { title: dict.hr?.payroll || "Payroll Engine", icon: BadgeDollarSign, href: "/hr/payroll" },
     ]
 
     // Other items

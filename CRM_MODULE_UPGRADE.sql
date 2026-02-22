@@ -66,12 +66,30 @@ CREATE TABLE IF NOT EXISTS public.campaigns (
 
 -- Note: In older setups, `uuid_generate_v4()` might need `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
 
--- 4. Enable RLS
+-- 4. Ensure `crm_activities` table exists for call logs and follow-ups
+CREATE TABLE IF NOT EXISTS public.crm_activities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lead_id UUID REFERENCES public.leads(id) ON DELETE CASCADE,
+    opportunity_id UUID REFERENCES public.opportunities(id) ON DELETE CASCADE,
+    type VARCHAR(50) DEFAULT 'Call', -- 'Call', 'Email', 'Meeting', 'Note', 'Task'
+    subject VARCHAR(255) NOT NULL,
+    description TEXT,
+    due_date TIMESTAMP WITH TIME ZONE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(50) DEFAULT 'Pending', -- 'Pending', 'Completed', 'Cancelled'
+    assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. Enable RLS
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.opportunities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.crm_activities ENABLE ROW LEVEL SECURITY;
 
--- 5. Add universal RLS policies (for brevity and simplicity during development)
+-- 6. Add universal RLS policies (for brevity and simplicity during development)
 DROP POLICY IF EXISTS "Enable read access for all authenticated users" ON public.leads;
 CREATE POLICY "Enable read access for all authenticated users" ON public.leads FOR SELECT TO authenticated USING (true);
 
@@ -109,3 +127,16 @@ CREATE POLICY "Enable update access for all authenticated users" ON public.campa
 
 DROP POLICY IF EXISTS "Enable delete access for all authenticated users" ON public.campaigns;
 CREATE POLICY "Enable delete access for all authenticated users" ON public.campaigns FOR DELETE TO authenticated USING (true);
+
+
+DROP POLICY IF EXISTS "Enable read access for all authenticated users" ON public.crm_activities;
+CREATE POLICY "Enable read access for all authenticated users" ON public.crm_activities FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Enable insert access for all authenticated users" ON public.crm_activities;
+CREATE POLICY "Enable insert access for all authenticated users" ON public.crm_activities FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Enable update access for all authenticated users" ON public.crm_activities;
+CREATE POLICY "Enable update access for all authenticated users" ON public.crm_activities FOR UPDATE TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Enable delete access for all authenticated users" ON public.crm_activities;
+CREATE POLICY "Enable delete access for all authenticated users" ON public.crm_activities FOR DELETE TO authenticated USING (true);
