@@ -127,16 +127,43 @@
 
 @media print {
   @page {
+    /* Let the browser handle size dynamically based on user setting */
     size: auto;
-    margin: 0;
+    /* Add a slight standard margin so printers don't crop the edges */
+    margin: 5mm;
   }
 
-  /* 1. Hide absolutely everything by default */
+  /* 1. Hide everything universally to prevent overlapping UI */
   body * {
     visibility: hidden;
   }
 
-  /* 2. Show the print areas and ALL their children */
+  /* 2. Thoroughly reset layout for ALL modal/dialog wrappers 
+     Radix UI adds styles that break print pagination. This nullifies them. */
+  html,
+  body,
+  #__next,
+  main,
+  [data-radix-portal],
+  [role="dialog"],
+  [data-state="open"] {
+    position: static !important;
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* 3. Re-show the print documents and areas */
   .print-document,
   .print-document *,
   .print-area,
@@ -144,55 +171,39 @@
     visibility: visible !important;
   }
 
-  /* 3. The Magic Bullet: Find ALL ancestors of the print area up to the body,
-     make them visible (required for children to show), and strip ALL layout constraints.
-     This instantly solves the fixed-position Dialog cropping, making it act like a normal page! */
+  /* Make sure ancestors of the print document don't hide it due to inheritance */
   body *:has(.print-document),
   body *:has(.print-area) {
     visibility: visible !important;
-    position: static !important;
-    display: block !important;
-    transform: none !important;
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-    width: auto !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    float: none !important;
   }
 
-  /* 4. Reset body and html */
-  html,
-  body {
-    visibility: visible !important;
-    position: static !important;
-    display: block !important;
-    transform: none !important;
-    overflow: visible !important;
+  /* 4. OVERRIDE rigid inline styles from React components that break hardware printing */
+  .print-document {
+    /* Snaps it out of the Dialog constraints perfectly to the page edge */
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    /* Let the element take the pure width of the paper to fix zoom/scale clipping */
+    width: 100% !important;
+    max-width: 100% !important;
+
+    /* Allow multi-page natural height growth */
     height: auto !important;
-    width: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    min-height: 0 !important;
+
+    /* Eliminate clipping! Important since inline component sets overflow:hidden */
+    overflow: visible !important;
+
+    /* Brand exact colors */
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
     background: white !important;
-    -webkit-font-smoothing: antialiased;
-    color: black !important;
   }
 
-  /* 5. Clean up things that should NEVER print even if they are inside a visible ancestor */
+  /* Clean up persistent non-print elements */
   .no-print,
   .no-print * {
     display: none !important;
-  }
-
-  /* Force exact color matching for standard charts/branding */
-  .print-document,
-  .print-area {
-    print-color-adjust: exact !important;
-    -webkit-print-color-adjust: exact !important;
   }
 }
